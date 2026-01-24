@@ -1,0 +1,98 @@
+.apm-overlay {
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(4px);
+}
+
+.dark .apm-overlay {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.apm-dialog {
+  background: white;
+  border: 1px solid #e4e4e7;
+}
+
+.dark .apm-dialog {
+  background: #09090b;
+  border-color: #27272a;
+}
+
+.apm-subtitle {
+  color: #52525b;
+}
+
+.dark .apm-subtitle {
+  color: #a1a1aa;
+}
+
+.apm-project-name {
+  color: #2563eb;
+}
+
+.dark .apm-project-name {
+  color: #60a5fa;
+}
+
+.apm-input-icon {
+  color: #71717a;
+}
+
+.dark .apm-input-icon {
+  color: #a1a1aa;
+}
+
+.apm-select {
+  border: 1px solid #d4d4d8;
+  border-radius: 6px;
+  color: #18181b;
+  background: white;
+}
+
+.dark .apm-select {
+  border-color: #3f3f46;
+  background: #18181b;
+  color: #e4e4e7;
+}
+
+.apm-select:focus {
+  border-color: #3b82f6;
+}
+
+.apm-btn {
+  cursor: pointer;
+}
+
+.apm-btn-cancel {
+  border: 1px solid #d4d4d8;
+  background: white;
+  color: #18181b;
+}
+
+.apm-btn-cancel:hover {
+  background: #f4f4f5;
+}
+
+.dark .apm-btn-cancel {
+  border-color: #3f3f46;
+  background: transparent;
+  color: #e4e4e7;
+}
+
+.dark .apm-btn-cancel:hover {
+  background: #27272a;
+}
+
+.apm-btn-primary {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  border: none;
+}
+
+.apm-btn-primary:hover {
+  opacity: 0.9;
+}
+
+.apm-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

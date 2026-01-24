@@ -1,0 +1,24 @@
+.dashboard-title {
+  color: #111827;
+}
+
+.dark .dashboard-title {
+  color: white;
+}
+
+.dashboard-subtitle {
+  color: #6b7280;
+}
+
+.dark .dashboard-subtitle {
+  color: #a1a1aa;
+}
+
+.dashboard-btn {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+}
+
+.dashboard-btn:hover {
+  opacity: 0.9;
+}
