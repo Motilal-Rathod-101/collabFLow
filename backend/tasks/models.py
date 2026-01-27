@@ -1,3 +1,38 @@
 from django.db import models
+from django.conf import settings
+from projects.models import Project
 
-# Create your models here.
+class Task(models.Model):
+    STATUS_CHOICES = [
+        ('TODO', 'TODO'),
+        ('IN_PROGRESS', 'IN_PROGRESS'),
+        ('DONE', 'DONE'),
+    ]
+
+    TYPE_CHOICES = [
+        ('TASK', 'TASK'),
+        ('BUG', 'BUG'),
+        ('FEATURE', 'FEATURE'),
+        ('IMPROVEMENT', 'IMPROVEMENT'),
+        ('OTHER', 'OTHER'),
+    ]
+
+    PRIORITY_CHOICES = [
+        ('LOW', 'LOW'),
+        ('MEDIUM', 'MEDIUM'),
+        ('HIGH', 'HIGH'),
+    ]
+
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='tasks')
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='TODO')
+    type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='TASK')
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='MEDIUM')
+    assignee = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='tasks')
+    due_date = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.title
