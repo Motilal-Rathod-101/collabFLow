@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link, useLocation, useSearchParams } from 'react-router-dom'
+import { useState, useEffect } from "react";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import {
   ChevronRightIcon,
   SettingsIcon,
@@ -7,42 +7,63 @@ import {
   ChartColumnIcon,
   CalendarIcon,
   ArrowRightIcon,
-} from 'lucide-react'
-import { useSelector } from 'react-redux'
-import type { RootState } from '../app/store'
+} from "lucide-react";
+import { useSelector, shallowEqual } from "react-redux";
+import type { RootState } from "../app/store";
 
 type Project = {
-  id: string
-  name: string
-}
+  id: string;
+  name: string;
+};
 
 type SubItem = {
-  title: string
-  icon: React.ElementType
-  url: string
-}
+  title: string;
+  icon: React.ElementType;
+  url: string;
+};
 
 const ProjectsSidebar = () => {
-  const location = useLocation()
-  const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set())
-  const [searchParams] = useSearchParams()
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
 
-  const projects = useSelector(
-    (state: RootState) => state.workspace.currentWorkspace?.projects || []
-  ) as Project[]
+  const projectIdFromUrl = searchParams.get("id");
+  const tabFromUrl = searchParams.get("tab") || "tasks";
+
+  const [expandedProjects, setExpandedProjects] = useState<Set<string>>(
+    new Set()
+  );
+
+  const currentWorkspace = useSelector(
+    (state: RootState) => state.workspace.currentWorkspace,
+    shallowEqual
+  );
+
+  const projects: Project[] = currentWorkspace?.projects ?? [];
+
+  useEffect(() => {
+    if (!projectIdFromUrl) return;
+
+    setExpandedProjects((prev) => {
+      const newSet = new Set(prev);
+      newSet.add(projectIdFromUrl);
+      return newSet;
+    });
+  }, [projectIdFromUrl]);
 
   const getProjectSubItems = (projectId: string): SubItem[] => [
     { title: 'Tasks', icon: KanbanIcon, url: `/projectsDetail?id=${projectId}&tab=tasks` },
     { title: 'Analytics', icon: ChartColumnIcon, url: `/projectsDetail?id=${projectId}&tab=analytics` },
     { title: 'Calendar', icon: CalendarIcon, url: `/projectsDetail?id=${projectId}&tab=calendar` },
     { title: 'Settings', icon: SettingsIcon, url: `/projectsDetail?id=${projectId}&tab=settings` },
-  ]
+  ];
 
   const toggleProject = (id: string) => {
-    const newSet = new Set(expandedProjects)
-    newSet.has(id) ? newSet.delete(id) : newSet.add(id)
-    setExpandedProjects(newSet)
-  }
+    setExpandedProjects((prev) => {
+      const newSet = new Set(prev);
+      newSet.has(id) ? newSet.delete(id) : newSet.add(id);
+      return newSet;
+    });
+  };
 
   return (
     <div className="mt-6 px-3">
@@ -51,7 +72,7 @@ const ProjectsSidebar = () => {
           Projects
         </h3>
         <Link to="/projects">
-          <button className="size-5 text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-800 rounded flex items-center justify-center transition-colors duration-200">
+          <button className="size-5 text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-800 rounded flex items-center justify-center">
             <ArrowRightIcon className="size-3" />
           </button>
         </Link>
@@ -62,10 +83,10 @@ const ProjectsSidebar = () => {
           <div key={project.id}>
             <button
               onClick={() => toggleProject(project.id)}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-colors duration-200 text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-white"
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800"
             >
               <ChevronRightIcon
-                className={`size-3 text-gray-500 dark:text-zinc-400 transition-transform duration-200 ${
+                className={`size-3 transition-transform ${
                   expandedProjects.has(project.id) && 'rotate-90'
                 }`}
               />
@@ -77,7 +98,7 @@ const ProjectsSidebar = () => {
               <div className="ml-5 mt-1 space-y-1">
                 {getProjectSubItems(project.id).map((subItem) => {
                   const isActive =
-                    location.pathname === `/projectsDetail` &&
+                    location.pathname === '/projectsDetail' &&
                     searchParams.get('id') === project.id &&
                     searchParams.get('tab') === subItem.title.toLowerCase()
 
@@ -85,10 +106,10 @@ const ProjectsSidebar = () => {
                     <Link
                       key={subItem.title}
                       to={subItem.url}
-                      className={`flex items-center gap-3 px-3 py-1.5 rounded-lg transition-colors duration-200 text-xs ${
+                      className={`flex items-center gap-3 px-3 py-1.5 rounded-lg text-xs ${
                         isActive
-                          ? 'bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/20'
-                          : 'text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-800'
+                          ? 'bg-blue-100 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400'
+                          : 'text-gray-600 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800'
                       }`}
                     >
                       <subItem.icon className="size-3" />

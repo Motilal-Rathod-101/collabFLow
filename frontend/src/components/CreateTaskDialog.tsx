@@ -64,7 +64,7 @@ export default function CreateTaskDialog({
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
     const [formData, setFormData] = useState<FormData>({
         title: "",
-        description: "",
+        description: "", 
         type: "TASK",
         status: "TODO",
         priority: "MEDIUM",

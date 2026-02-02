@@ -1,6 +1,6 @@
 const API = "http://localhost:8000/api";
 
-export async function fetchWorkspaces() {
+export async function getWorkspaces() {
   const res = await fetch(`${API}/workspaces/`);
 
   if (!res.ok) throw new Error("Failed to fetch workspaces");

@@ -11,6 +11,7 @@ type TaskPriority = "LOW" | "MEDIUM" | "HIGH";
 type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE";
 
 interface Assignee {
+  id: string;
   name?: string;
   image?: string;
 }
@@ -23,7 +24,7 @@ interface Task {
   status: TaskStatus;
   due_date: string;
   projectId: string;
-  assignee?: Assignee;
+  assignee?: Assignee | null;
 }
 
 // constants 
@@ -78,24 +79,33 @@ const ProjectTasks = ({ tasks }: { tasks: Task[] }) => {
     setFilters((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
-    try {
-      toast.loading("Updating status...");
+  const handleStatusChange = async (
+  taskId: string,
+  newStatus: TaskStatus
+) => {
+  try {
+    toast.loading("Updating status...");
 
-      // API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      const updatedTask = { ...tasks.find((t) => t.id === taskId)! };
-      updatedTask.status = newStatus;
-      dispatch(updateTask(updatedTask));
+    const existingTask = tasks.find((t) => t.id === taskId);
+    if (!existingTask) return;
 
-      toast.dismiss();
-      toast.success("Task status updated successfully");
-    } catch (error: any) {
-      toast.dismiss();
-      toast.error(error?.response?.data?.message || error.message);
-    }
-  };
+    const updatedTask = {...existingTask,
+      status: newStatus,
+      projectId: existingTask.projectId,
+    };
+
+    dispatch(updateTask(updatedTask));
+
+    toast.dismiss();
+    toast.success("Task status updated successfully");
+  } catch (error: any) {
+    toast.dismiss();
+    toast.error(error?.response?.data?.message || error.message);
+  }
+};
+
 
   const handleDelete = async () => {
     try {
@@ -124,6 +134,7 @@ const ProjectTasks = ({ tasks }: { tasks: Task[] }) => {
       setSelectedTasks(tasks.map((t) => t.id));
     }
   };
+  
 
   return (
     <div>
@@ -206,7 +217,7 @@ const ProjectTasks = ({ tasks }: { tasks: Task[] }) => {
                     <input
                       type="checkbox"
                       onChange={toggleSelectAll}
-                      checked={selectedTasks.length === tasks.length && tasks.length > 0}
+                     checked={filteredTasks.length > 0 &&selectedTasks.length === filteredTasks.length}
                       className="size-3 accent-zinc-600 dark:accent-zinc-500"
                     />
                   </th>
@@ -368,8 +379,10 @@ const ProjectTasks = ({ tasks }: { tasks: Task[] }) => {
 
                     <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
                       <CalendarIcon className="size-4" />
-                      {format(new Date(task.due_date), "dd MMMM")}
-                    </div>
+                        {task.due_date
+                          ? format(new Date(task.due_date), "dd MMMM")
+                          : "-"}                   
+                     </div>
                   </div>
                 );
               })

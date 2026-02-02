@@ -5,7 +5,7 @@ import { assets } from '../assets/assets'
 import type { RootState, AppDispatch } from '../app/store'
 
 interface NavbarProps {
-  // optional for desktop-only
+  // optional 
   setIsSidebarOpen?: React.Dispatch<React.SetStateAction<boolean>>
 }
 

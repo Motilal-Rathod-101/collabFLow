@@ -10,107 +10,96 @@ import {
   FileStackIcon,
   ZapIcon,
 } from "lucide-react";
+
 import ProjectAnalytics from "../components/ProjectAnalytics";
 import ProjectSettings from "../components/ProjectSettings";
 import CreateTaskDialog from "../components/CreateTaskDialog";
 import ProjectCalendar from "../components/ProjectCalendar";
 import ProjectTasks from "../components/ProjectTasks";
+
 import type { RootState } from "../app/store";
 
-// types
-type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE";
+import type {
+  WorkspaceProject,
+  Task,
+} from "../features/workspaceSlice";
 
-interface UserType {
-  id: string;
-  name: string;
-}
+type ProjectStatus =| "PLANNING"| "ACTIVE"| "ON_HOLD"| "COMPLETED"| "CANCELLED";
 
-interface Task {
-  id: string;
-  title: string;
-  status: TaskStatus;
-  due_date?: Date | string;
-  createdAt?: Date | string;
-  updatedAt?: Date | string;
-  type?: string;
-  priority?: string;
-  assignee?: UserType | null;
-  [key: string]: any;
-}
-
-type ProjectStatus =
-  | "PLANNING"
-  | "ACTIVE"
-  | "ON_HOLD"
-  | "COMPLETED"
-  | "CANCELLED";
-
-interface Project {
-  id: string;
-  name: string;
-  status: ProjectStatus;
-  tasks?: Task[];
-  members?: UserType[];
-  [key: string]: any;
-}
-
-// comments
 export default function ProjectDetail() {
+  
   const [searchParams, setSearchParams] = useSearchParams();
-  const tab = searchParams.get("tab");
+  const tab = searchParams.get("tab") || "tasks";
   const id = searchParams.get("id");
 
   const navigate = useNavigate();
-  const projects = useSelector(
-    (state: RootState) => state.workspace?.currentWorkspace?.projects || []
+
+  const currentWorkspace = useSelector(
+    (state: RootState) => state.workspace.currentWorkspace
   );
 
-  const [project, setProject] = useState<Project | null>(null);
+  const projects = currentWorkspace?.projects ?? [];
+
+  const [project, setProject] = useState<WorkspaceProject | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [showCreateTask, setShowCreateTask] = useState(false);
-  const [activeTab, setActiveTab] = useState(tab || "tasks");
+  const [activeTab, setActiveTab] = useState(tab);
 
+  // sync tab with URL
   useEffect(() => {
-    if (tab) setActiveTab(tab);
+    setActiveTab(tab);
   }, [tab]);
 
-  useEffect(() => {
-    if (projects.length > 0 && id) {
-      const proj = projects.find((p: Project) => p.id === id) || null;
+    useEffect(() => {
+    if (!id || projects.length === 0 || !currentWorkspace) return;
 
-      // Convert all task dates to Date objects safely
-      const formattedTasks =
-        proj?.tasks?.map((t: Task) => ({
-          ...t,
-          due_date: t.due_date ? new Date(t.due_date) : undefined,
-          createdAt: t.createdAt ? new Date(t.createdAt) : undefined,
-          updatedAt: t.updatedAt ? new Date(t.updatedAt) : undefined,
-        })) || [];
+    const found = projects.find((p) => p.id === id) ?? null;
+    if (!found) return;
+let formattedTasks: Task[] = [];
 
-      setProject(proj);
-      setTasks(formattedTasks);
+if (found.tasks) {
+  formattedTasks = found.tasks.map((task: any) => {
+    let assignedUser = null;
+
+    for (let member of currentWorkspace.members) {
+      if (member.user.id === task.assignee) {
+        assignedUser = member;
+        break;
+      }
     }
-  }, [id, projects]);
 
-  const statusColors: Record<ProjectStatus, string> = {
-    PLANNING: "bg-zinc-200 text-zinc-900 dark:bg-zinc-600 dark:text-zinc-200",
-    ACTIVE:
-      "bg-emerald-200 text-emerald-900 dark:bg-emerald-500 dark:text-emerald-900",
-    ON_HOLD:
-      "bg-amber-200 text-amber-900 dark:bg-amber-500 dark:text-amber-900",
-    COMPLETED:
-      "bg-blue-200 text-blue-900 dark:bg-blue-500 dark:text-blue-900",
-    CANCELLED:
-      "bg-red-200 text-red-900 dark:bg-red-500 dark:text-red-900",
-  };
+    return {
+      ...task,
+      projectId: found.id,
+      assignee: assignedUser
+        ? {
+            id: assignedUser.user.id,
+            name:
+              assignedUser.user.first_name +
+              " " +
+              assignedUser.user.last_name,
+            image: assignedUser.user.image,
+          }
+        : null,
+    };
+  });
+}
+
+setProject(found);
+setTasks(formattedTasks);
+
+  }, [id, projects, currentWorkspace]);
+  if (!currentWorkspace) {
+    return <div className="p-6">Loading workspace...</div>;
+  }
 
   if (!project) {
     return (
-      <div className="p-6 text-center text-zinc-900 dark:text-zinc-200">
-        <p className="text-3xl md:text-5xl mt-40 mb-10">Project not found</p>
+      <div className="p-6 text-center">
+        <p className="text-2xl mb-6">Project not found</p>
         <button
           onClick={() => navigate("/projects")}
-          className="mt-4 px-4 py-2 rounded bg-zinc-200 text-zinc-900 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-white dark:hover:bg-zinc-600"
+          className="px-4 py-2 bg-gray-200 rounded"
         >
           Back to Projects
         </button>
@@ -118,139 +107,100 @@ export default function ProjectDetail() {
     );
   }
 
+  const statusColors: Record<ProjectStatus, string> = {
+    PLANNING: "bg-gray-200",
+    ACTIVE: "bg-emerald-200",
+    ON_HOLD: "bg-amber-200",
+    COMPLETED: "bg-blue-200",
+    CANCELLED: "bg-red-200",
+  };
+
   return (
-    <div className="space-y-5 max-w-6xl mx-auto text-zinc-900 dark:text-white">
+    <div className="max-w-6xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex max-md:flex-col gap-4 flex-wrap items-start justify-between max-w-6xl">
-        <div className="flex items-center gap-4">
-          <button
-            className="p-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-400"
-            onClick={() => navigate("/projects")}
-          >
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-3">
+          <button onClick={() => navigate("/projects")}>
             <ArrowLeftIcon className="w-4 h-4" />
           </button>
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-medium">{project.name}</h1>
-            <span
-              className={`px-2 py-1 rounded text-xs capitalize ${
-                statusColors[project.status]
-              }`}
-            >
-              {project.status.replace("_", " ")}
-            </span>
-          </div>
+          <h1 className="text-xl font-semibold">{project.name}</h1>
+          <span className={`px-2 py-1 text-xs rounded ${statusColors[project.status]}`}>
+            {project.status}
+          </span>
         </div>
+
         <button
           onClick={() => setShowCreateTask(true)}
-          className="flex items-center gap-2 px-5 py-2 text-sm rounded bg-gradient-to-br from-blue-500 to-blue-600 text-white"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded"
         >
-          <PlusIcon className="size-4" />
-          New Task
+          <PlusIcon className="w-4 h-4" /> New Task
         </button>
       </div>
 
-      {/* Info Cards */}
-      <div className="grid grid-cols-2 sm:flex flex-wrap gap-6">
-        {[
-          {
-            label: "Total Tasks",
-            value: tasks.length,
-            color: "text-zinc-900 dark:text-white",
-          },
-          {
-            label: "Completed",
-            value: tasks.filter((t) => t.status === "DONE").length,
-            color: "text-emerald-700 dark:text-emerald-400",
-          },
-          {
-            label: "In Progress",
-            value: tasks.filter(
-              (t) => t.status === "IN_PROGRESS" || t.status === "TODO"
-            ).length,
-            color: "text-amber-700 dark:text-amber-400",
-          },
-          {
-            label: "Team Members",
-            value: project.members?.length || 0,
-            color: "text-blue-700 dark:text-blue-400",
-          },
-        ].map((card, idx) => (
-          <div
-            key={idx}
-            className="dark:bg-gradient-to-br dark:from-zinc-800/70 dark:to-zinc-900/50 border border-zinc-200 dark:border-zinc-800 flex justify-between sm:min-w-60 p-4 py-2.5 rounded"
-          >
-            <div>
-              <div className="text-sm text-zinc-600 dark:text-zinc-400">
-                {card.label}
-              </div>
-              <div className={`text-2xl font-bold ${card.color}`}>
-                {card.value}
-              </div>
-            </div>
-            <ZapIcon className={`size-4 ${card.color}`} />
-          </div>
-        ))}
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Stat label="Total Tasks" value={tasks.length} />
+        <Stat
+          label="Completed"
+          value={tasks.filter((t) => t.status === "DONE").length}
+        />
+        <Stat
+          label="In Progress"
+          value={tasks.filter((t) => t.status !== "DONE").length}
+        />
+        <Stat
+          label="Team Members"
+          value={currentWorkspace.members.length}
+        />
       </div>
 
       {/* Tabs */}
-      <div>
-        <div className="inline-flex flex-wrap max-sm:grid grid-cols-3 gap-2 border border-zinc-200 dark:border-zinc-800 rounded overflow-hidden">
-          {[
-            { key: "tasks", label: "Tasks", icon: FileStackIcon },
-            { key: "calendar", label: "Calendar", icon: CalendarIcon },
-            { key: "analytics", label: "Analytics", icon: BarChart3Icon },
-            { key: "settings", label: "Settings", icon: SettingsIcon },
-          ].map((tabItem) => (
-            <button
-              key={tabItem.key}
-              onClick={() => {
-                setActiveTab(tabItem.key);
-                setSearchParams({ id: id || "", tab: tabItem.key });
-              }}
-              className={`flex items-center gap-2 px-4 py-2 text-sm transition-all ${
-                activeTab === tabItem.key
-                  ? "bg-zinc-100 dark:bg-zinc-800/80"
-                  : "hover:bg-zinc-50 dark:hover:bg-zinc-700"
-              }`}
-            >
-              <tabItem.icon className="size-3.5" />
-              {tabItem.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="mt-6">
-          {activeTab === "tasks" && (
-            <div className="dark:bg-zinc-900/40 rounded max-w-6xl">
-              <ProjectTasks tasks={tasks} />
-            </div>
-          )}
-          {activeTab === "analytics" && (
-            <div className="dark:bg-zinc-900/40 rounded max-w-6xl">
-              <ProjectAnalytics tasks={tasks} project={project} />
-            </div>
-          )}
-          {activeTab === "calendar" && (
-            <div className="dark:bg-zinc-900/40 rounded max-w-6xl">
-              <ProjectCalendar tasks={tasks} />
-            </div>
-          )}
-          {activeTab === "settings" && (
-            <div className="dark:bg-zinc-900/40 rounded max-w-6xl">
-              <ProjectSettings project={project} />
-            </div>
-          )}
-        </div>
+      <div className="flex gap-2 border rounded overflow-hidden">
+        {[
+          { key: "tasks", label: "Tasks", icon: FileStackIcon },
+          { key: "calendar", label: "Calendar", icon: CalendarIcon },
+          { key: "analytics", label: "Analytics", icon: BarChart3Icon },
+          { key: "settings", label: "Settings", icon: SettingsIcon },
+        ].map((t) => (
+          <button
+            key={t.key}
+            onClick={() => {
+              setActiveTab(t.key);
+              setSearchParams({ id: id!, tab: t.key });
+            }}
+            className={`px-4 py-2 flex items-center gap-2 ${
+              activeTab === t.key ? "bg-gray-200" : ""
+            }`}
+          >
+            <t.icon className="w-4 h-4" />
+            {t.label}
+          </button>
+        ))}
       </div>
 
-      {/* Create Task Modal */}
+      {/* Content */}
+      {activeTab === "tasks" && <ProjectTasks tasks={tasks} />}
+      {activeTab === "calendar" && <ProjectCalendar tasks={tasks} />}
+      {activeTab === "analytics" && (
+        <ProjectAnalytics tasks={tasks} project={project} />
+      )}
+      {activeTab === "settings" && <ProjectSettings project={project} />}
+
+      {/* Modal */}
       {showCreateTask && (
         <CreateTaskDialog
           showCreateTask={showCreateTask}
           setShowCreateTask={setShowCreateTask}
-          projectId={id || ""}
+          projectId={project.id}
         />
       )}
     </div>
   );
 }
+
+const Stat = ({ label, value }: { label: string; value: number }) => (
+  <div className="border p-4 rounded">
+    <div className="text-sm text-gray-500">{label}</div>
+    <div className="text-xl font-bold">{value}</div>
+  </div>
+);

@@ -35,49 +35,73 @@ const PRIORITY_COLORS: Record<TaskPriority, string> = {
 };
 
 const ProjectAnalytics = ({ project, tasks }: ProjectAnalyticsProps) => {
-  const { stats, statusData, typeData, priorityData } = useMemo(() => {
-    const now = new Date();
-    const total = tasks.length;
+const { stats, statusData, typeData, priorityData } = useMemo(() => {
+  const now = new Date();
+  const total = tasks.length;
 
-    const stats = {
-      total,
-      completed: 0,
-      inProgress: 0,
-      todo: 0,
-      overdue: 0,
-    };
+  const stats = {
+    total,
+    completed: 0,
+    inProgress: 0,
+    todo: 0,
+    overdue: 0,
+  };
 
-    const statusMap: Record<TaskStatus, number> = { TODO: 0, IN_PROGRESS: 0, DONE: 0 };
-    const typeMap: Record<TaskType, number> = { TASK: 0, BUG: 0, FEATURE: 0, IMPROVEMENT: 0, OTHER: 0 };
-    const priorityMap: Record<TaskPriority, number> = { LOW: 0, MEDIUM: 0, HIGH: 0 };
+  const statusMap: Record<TaskStatus, number> = {
+    TODO: 0,
+    IN_PROGRESS: 0,
+    DONE: 0,
+  };
 
-    tasks.forEach((t) => {
-      if (t.status === "DONE") stats.completed++;
-      if (t.status === "IN_PROGRESS") stats.inProgress++;
-      if (t.status === "TODO") stats.todo++;
-      if (new Date(t.due_date) < now && t.status !== "DONE") stats.overdue++;
+  const typeMap: Record<TaskType, number> = {
+    TASK: 0,
+    BUG: 0,
+    FEATURE: 0,
+    IMPROVEMENT: 0,
+    OTHER: 0,
+  };
 
-      statusMap[t.status]++;
-      typeMap[t.type]++;
-      priorityMap[t.priority]++;
-    });
+  const priorityMap: Record<TaskPriority, number> = {
+    LOW: 0,
+    MEDIUM: 0,
+    HIGH: 0,
+  };
+const toDate = (value?: string | Date): Date | null => {
+  if (!value) return null;
+  return value instanceof Date ? value : new Date(value);
+};
 
-    return {
-      stats,
-      statusData: Object.entries(statusMap).map(([k, v]) => ({
-        name: k.replace("_", " "),
-        value: v,
-      })),
-      typeData: Object.entries(typeMap)
-        .filter(([_, v]) => v > 0)
-        .map(([k, v]) => ({ name: k, value: v })),
-      priorityData: Object.entries(priorityMap).map(([k, v]) => ({
-        name: k as TaskPriority,
-        value: v,
-        percentage: total > 0 ? Math.round((v / total) * 100) : 0,
-      })),
-    };
-  }, [tasks]);
+  tasks.forEach((t) => {
+    if (t.status === "DONE") stats.completed++;
+    if (t.status === "IN_PROGRESS") stats.inProgress++;
+    if (t.status === "TODO") stats.todo++;
+
+    const d = toDate(t.due_date);
+    if (d && d < now && t.status !== "DONE") {
+      stats.overdue++;
+    }
+
+    statusMap[t.status]++;
+    typeMap[t.type]++;
+    priorityMap[t.priority]++;
+  });
+
+  return {
+    stats,
+    statusData: Object.entries(statusMap).map(([k, v]) => ({
+      name: k.replace("_", " "),
+      value: v,
+    })),
+    typeData: Object.entries(typeMap)
+      .filter(([_, v]) => v > 0)
+      .map(([k, v]) => ({ name: k, value: v })),
+    priorityData: Object.entries(priorityMap).map(([k, v]) => ({
+      name: k as TaskPriority,
+      value: v,
+      percentage: total > 0 ? Math.round((v / total) * 100) : 0,
+    })),
+  };
+}, [tasks]);
 
   const completionRate = stats.total ? Math.round((stats.completed / stats.total) * 100) : 0;
 

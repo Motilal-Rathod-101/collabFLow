@@ -14,7 +14,7 @@ const Layout = () => {
   // Load theme on app start
   useEffect(() => {
     dispatch(loadTheme())
-  }, [dispatch])
+  }, [])
 
   if (loading) {
     return (

@@ -6,8 +6,21 @@ import Projects from "./pages/Projects";
 import Team from "./pages/Team";
 import ProjectDetails from "./pages/ProjectDetails";
 import TaskDetails from "./pages/TaskDetails";
+import type { AppDispatch } from "./app/store";
+import { useDispatch } from "react-redux";
+import { fetchWorkspaces } from "./features/workspaceSlice";
+import { useEffect } from "react";
+
 
 const App = () => {
+
+    const dispatch = useDispatch<AppDispatch>();
+    
+    useEffect(() => {
+        dispatch(fetchWorkspaces());
+    }, [dispatch]);
+
+
     return (
         <>
             <Toaster />

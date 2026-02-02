@@ -1,56 +1,76 @@
+import { useEffect, useState } from "react";
+import {
+  CheckSquareIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+} from "lucide-react";
+import { useSelector } from "react-redux";
+import { Link } from "react-router-dom";
+import type { RootState } from "../app/store";
 
-import { useEffect, useState } from 'react'
-import { CheckSquareIcon, ChevronDownIcon, ChevronRightIcon } from 'lucide-react'
-import { useSelector } from 'react-redux'
-import { Link } from 'react-router-dom'
-import type { RootState } from '../app/store'
+// types
 
 type Task = {
-  id: string
-  title: string
-  status: 'DONE' | 'IN_PROGRESS' | 'TODO' | string
-  projectId: string
+  id: string;
+  title: string;
+  status: "DONE" | "IN_PROGRESS" | "TODO" | string;
+  projectId: string;
   assignee?: {
-    id: string
-  }
-}
+    id: string;
+  };
+};
+
+// comp
 
 function MyTasksSidebar() {
-  const user = { id: 'user_1' }
+  
+  const { currentWorkspace } = useSelector(
+    (state: RootState) => state.workspace
+  );
+  const user = currentWorkspace?.owner;
+//   const user = {
+//   id: "6512de66-50c4-420e-be72-38f5c595cac0",
+// }
 
-  const { currentWorkspace } = useSelector((state: RootState) => state.workspace)
-  const [showMyTasks, setShowMyTasks] = useState(false)
-  const [myTasks, setMyTasks] = useState<Task[]>([])
 
-  const toggleMyTasks = () => setShowMyTasks((prev) => !prev)
+  const [showMyTasks, setShowMyTasks] = useState(false);
+  const [myTasks, setMyTasks] = useState<Task[]>([]);
+
+  const toggleMyTasks = () => setShowMyTasks((prev) => !prev);
 
   const getTaskStatusColor = (status: string) => {
     switch (status) {
-      case 'DONE':
-        return 'bg-green-500'
-      case 'IN_PROGRESS':
-        return 'bg-yellow-500'
-      case 'TODO':
-        return 'bg-gray-500 dark:bg-zinc-500'
+      case "DONE":
+        return "bg-green-500";
+      case "IN_PROGRESS":
+        return "bg-yellow-500";
+      case "TODO":
+        return "bg-gray-500 dark:bg-zinc-500";
       default:
-        return 'bg-gray-400 dark:bg-zinc-400'
+        return "bg-gray-400 dark:bg-zinc-400";
     }
-  }
+  };
+
 
   const fetchUserTasks = () => {
-    const userId = user?.id || ''
-    if (!userId || !currentWorkspace) return
+    if (!currentWorkspace || !user?.id) return;
 
-    const currentWorkspaceTasks = currentWorkspace.projects.flatMap((project) =>
-      project.tasks.filter((task) => task?.assignee?.id === userId)
-    )
+    const tasks = currentWorkspace.projects.flatMap((project) =>
+      (project.tasks ?? [])
+        .filter((task) => task?.assignee?.id === user.id)
+        .map((task) => ({
+          ...task,
+          projectId: project.id, 
+        }))
+    );
 
-    setMyTasks(currentWorkspaceTasks)
-  }
+    setMyTasks(tasks);
+  };
 
   useEffect(() => {
-    fetchUserTasks()
-  }, [currentWorkspace])
+    fetchUserTasks();
+  }, [currentWorkspace, user]);
+// UI
 
   return (
     <div className="mt-6 px-3">
@@ -67,6 +87,7 @@ function MyTasksSidebar() {
             {myTasks.length}
           </span>
         </div>
+
         {showMyTasks ? (
           <ChevronDownIcon className="w-4 h-4 text-gray-500 dark:text-zinc-400" />
         ) : (
@@ -99,7 +120,7 @@ function MyTasksSidebar() {
                         {task.title}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-zinc-500 lowercase">
-                        {task.status.replace('_', ' ')}
+                        {task.status.replace("_", " ")}
                       </p>
                     </div>
                   </div>
@@ -110,7 +131,7 @@ function MyTasksSidebar() {
         </div>
       )}
     </div>
-  )
+  );
 }
 
-export default MyTasksSidebar
+export default MyTasksSidebar;

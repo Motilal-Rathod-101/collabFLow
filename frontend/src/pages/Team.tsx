@@ -1,40 +1,83 @@
 import { useEffect, useState } from "react";
 import { UsersIcon, UserPlus, Activity, Shield, Search } from "lucide-react";
 import { useSelector } from "react-redux";
-import InviteMemberDialog from "../components/InviteMemberDialog";
 import type { RootState } from "../app/store";
+import InviteMemberDialog from "../components/InviteMemberDialog";
+// import userImg from "../assets/userImgCollabflow.png";
 
-interface User {
+interface TeamMember {
   id: string;
-  user: { name: string; email: string; image?: string };
-  role?: string;
+  role: string;
+  user: {
+    id: string;
+    username: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+    image?: string;
+  };
 }
+
+
+
 
 interface Project {
   id: string;
   status: string;
-  tasks: any[];
+  tasks?: any[];
+}
+interface TeamTask {
+  id: string;
+  title: string;
+  status: string;
 }
 
+
+
 export default function Team() {
-  const { currentWorkspace } = useSelector((state: RootState) => state.workspace);
-  const [searchTerm, setSearchTerm] = useState("");
+const { currentWorkspace } = useSelector(
+  (state: RootState) => state.workspace
+);
+
+const [users, setUsers] = useState<TeamMember[]>([]);
+const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [users, setUsers] = useState<User[]>([]);
-  const [tasks, setTasks] = useState<any[]>([]);
+
+const [tasks, setTasks] = useState<TeamTask[]>([]);
+
+useEffect(() => {
+  if (!currentWorkspace) {
+    setUsers([]);
+    setTasks([]);
+    return;
+  }
+  // setUsers(currentWorkspace.members);
+
+  const allTasks: TeamTask[] =
+    currentWorkspace.projects?.flatMap((p) =>
+      (p.tasks || []).map((t: any) => ({
+        id: t.id,
+        title: t.title,
+        status: t.status,
+      }))
+    ) || [];
+
+  setTasks(allTasks);
+  setUsers(currentWorkspace.members ?? []);
+  
+}, [currentWorkspace]);
 
   const projects: Project[] = currentWorkspace?.projects || [];
 
-  useEffect(() => {
-    setUsers(currentWorkspace?.members || []);
-    setTasks(currentWorkspace?.projects?.flatMap((p) => p.tasks) || []);
-  }, [currentWorkspace]);
 
-  const filteredUsers = users.filter(
-    (u) =>
-      u.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+const filteredUsers = users.filter(
+  (u) =>
+    `${u.user.first_name} ${u.user.last_name}`
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase()) ||
+    u.user.email.toLowerCase().includes(searchTerm.toLowerCase())
+);
+
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -100,11 +143,13 @@ export default function Team() {
                   <td className="px-6 py-2.5 flex items-center gap-3">
                     <img
                       src={user.user.image}
-                      alt={user.user.name}
+                      //   src={userImg}
+                      // src="userImgCollabflow.png"
+                      alt={user.user.first_name}
                       className="w-7 h-7 rounded-full bg-gray-200 dark:bg-zinc-800"
                     />
                     <span className="text-sm text-zinc-800 dark:text-white truncate">
-                      {user.user.name || "Unknown User"}
+                     {user.user.first_name} {user.user.last_name}
                     </span>
                   </td>
                   <td className="px-6 py-2.5 text-sm text-gray-500 dark:text-zinc-400">
@@ -130,7 +175,10 @@ export default function Team() {
     </div>
   );
 }
-
+const colorMap: any = {
+  emerald: "bg-emerald-100 dark:bg-emerald-500/10 text-emerald-500",
+  purple: "bg-purple-100 dark:bg-purple-500/10 text-purple-500",
+};
 // Card Component
 const Card = ({ icon: Icon, label, value, color }: any) => (
   <div className={`flex-1 p-6 rounded-lg border border-gray-300 dark:border-zinc-800 dark:bg-gradient-to-br dark:from-zinc-800/70 dark:to-zinc-900/50`}>
@@ -139,7 +187,9 @@ const Card = ({ icon: Icon, label, value, color }: any) => (
         <p className="text-sm text-gray-500 dark:text-zinc-400">{label}</p>
         <p className="text-xl font-bold text-gray-900 dark:text-white">{value}</p>
       </div>
-      <div className={`p-3 rounded-xl bg-${color}-100 dark:bg-${color}-500/10`}>
+      
+      {/* <div className={`p-3 rounded-xl bg-${color}-100 dark:bg-${color}-500/10`}> */}
+      <div className={`p-3 rounded-xl ${colorMap[color]}`}>
         <Icon className={`w-4 h-4 text-${color}-500 dark:text-${color}-200`} />
       </div>
     </div>

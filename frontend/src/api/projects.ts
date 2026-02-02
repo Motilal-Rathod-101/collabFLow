@@ -1,4 +1,4 @@
-import api from "./axios";
+import api from "./axios";''
 
 export const getProjects = async () => {
   const res = await api.get("projects/");
