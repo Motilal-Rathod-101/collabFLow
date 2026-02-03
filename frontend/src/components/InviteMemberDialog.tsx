@@ -24,8 +24,6 @@ const InviteMemberDialog = ({ isDialogOpen, setIsDialogOpen }: InviteMemberDialo
     setIsSubmitting(true);
 
     try {
-      // Example: send invitation API call
-      // await api.inviteMember(currentWorkspace.id, formData.email, formData.role);
 
       console.log("Invitation sent:", formData);
       setFormData({ email: "", role: "org:member" });

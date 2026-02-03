@@ -179,16 +179,6 @@ const workspaceSlice = createSlice({
       });
     },
 
-    
-    // updateProject(state, action) {
-    //   const index = state.currentWorkspace.projects.findIndex(
-    //     p => p.id === action.payload.id
-    //   );
-    //   if (index !== -1) {
-    //     state.currentWorkspace.projects[index] = action.payload;
-    //   }
-    // }
-
   },
 
   extraReducers: (builder) => {

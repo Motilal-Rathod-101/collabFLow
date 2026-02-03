@@ -4,17 +4,11 @@ from workspaces.models import Workspace, WorkspaceMember
 from tasks.models import Task
 from projects.models import Project, ProjectMember 
 from comments.models import Comment
-from django.core.management.base import BaseCommand
-from core.models import User
-from workspaces.models import Workspace, WorkspaceMember
-from projects.models import Project, ProjectMember
-from tasks.models import Task
-from comments.models import Comment
 from django.utils.timezone import now
+
 
 class Command(BaseCommand):
     help = "Seed database with dummy data"
-
 
     def handle(self, *args, **kwargs):
         self.stdout.write("Seeding database...")
@@ -86,7 +80,7 @@ class Command(BaseCommand):
             defaults={"description": "Automation testing framework for regression and performance."}
         )
 
-        # PROJECT MEMBERS
+        
         for project in [proj1, proj2, proj3, proj4]:
             ProjectMember.objects.get_or_create(user=user1, project=project, role="admin")
             ProjectMember.objects.get_or_create(user=user2, project=project, role="admin")
@@ -132,7 +126,6 @@ class Command(BaseCommand):
             }
         )
 
-        # COMMENTS
         Comment.objects.get_or_create(
             task=task1,
             user=user2,
@@ -151,58 +144,52 @@ class Command(BaseCommand):
             content="Don't forget to add password validation."
         )
 
-        self.stdout.write(self.style.SUCCESS(" Database seeded successfully!"))
+        simple_tasks = [
+            {
+                "title": "Plan the work",
+                "description": "Understand the project and plan tasks clearly.",
+                "status": "TODO",
+                "type": "TASK",
+                "priority": "MEDIUM",
+            },
+            {
+                "title": "Start development",
+                "description": "Work on main features of the project.",
+                "status": "IN_PROGRESS",
+                "type": "FEATURE",
+                "priority": "HIGH",
+            },
+            {
+                "title": "Test and fix issues",
+                "description": "Test the project and fix bugs.",
+                "status": "TODO",
+                "type": "BUG",
+                "priority": "LOW",
+            },
+        ]
 
+        projects = Project.objects.all()
 
+        for project in projects:
+            if project.tasks.exists():
+                continue
 
+            members = WorkspaceMember.objects.filter(workspace=project.workspace)
+            if not members.exists():
+                continue
 
-simple_tasks = [
-    {
-        "title": "Plan the work",
-        "description": "Understand the project and plan tasks clearly.",
-        "status": "TODO",
-        "type": "TASK",
-        "priority": "MEDIUM",
-    },
-    {
-        "title": "Start development",
-        "description": "Work on main features of the project.",
-        "status": "IN_PROGRESS",
-        "type": "FEATURE",
-        "priority": "HIGH",
-    },
-    {
-        "title": "Test and fix issues",
-        "description": "Test the project and fix bugs.",
-        "status": "TODO",
-        "type": "BUG",
-        "priority": "LOW",
-    },
-]
+            members = list(members)
 
-projects = Project.objects.all()
+            for i, task_data in enumerate(simple_tasks):
+                Task.objects.create(
+                    title=task_data["title"],
+                    description=task_data["description"],
+                    project=project,
+                    assignee=members[i % len(members)].user,
+                    status=task_data["status"],
+                    type=task_data["type"],
+                    priority=task_data["priority"],
+                    due_date=now(),
+                )
 
-for project in projects:
-    if project.tasks.exists():
-        continue
-
-    members = WorkspaceMember.objects.filter(workspace=project.workspace)
-
-    if not members.exists():
-        continue
-
-    members = list(members)
-
-    for i, task_data in enumerate(simple_tasks):
-        Task.objects.create(
-            title=task_data["title"],
-            description=task_data["description"],
-            project=project,
-            assignee=members[i % len(members)].user,
-            status=task_data["status"],
-            type=task_data["type"],
-            priority=task_data["priority"],
-            due_date=now(),
-        )
-
-print(" Missing tasks added successfully")
+        self.stdout.write(self.style.SUCCESS("Database seeded successfully!"))
