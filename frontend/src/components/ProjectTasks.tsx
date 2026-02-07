@@ -69,9 +69,9 @@ const priorityTexts: Record<
 
 // component
 const ProjectTasks = ({ tasks }: { tasks: Task[] }) => {
-const dispatch = useDispatch<any>();
-const navigate = useNavigate();
-const [selectedTasks, setSelectedTasks] = useState<number[]>([]);
+  const dispatch = useDispatch<any>();
+  const navigate = useNavigate();
+  const [selectedTasks, setSelectedTasks] = useState<number[]>([]);
 
   const [filters, setFilters] = useState({
     status: "",
@@ -321,17 +321,10 @@ const [selectedTasks, setSelectedTasks] = useState<number[]>([]);
                     >
                       <select
                         value={task.status}
-                        // onChange={(e) =>
-                        //   handleStatusChange(
-                        //     task.id,
-                        //     e.target.value as TaskStatus
-                        //   )
-                        // }
-                        onChange={() =>
-                          setSelectedTasks((prev) =>
-                            prev.includes(task.id)
-                              ? prev.filter((id) => id !== task.id)
-                              : [...prev, task.id]
+                        onChange={(e) =>
+                          handleStatusChange(
+                            task.id,
+                            e.target.value as TaskStatus
                           )
                         }
                         className="outline-none px-2 py-1 rounded text-sm"

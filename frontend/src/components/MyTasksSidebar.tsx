@@ -10,15 +10,19 @@ import type { RootState } from "../app/store";
 
 // types
 
-type Task = {
-  id: string;
+export interface Task {
+  id: number;
   title: string;
-  status: "DONE" | "IN_PROGRESS" | "TODO" | string;
-  projectId: string;
-  assignee?: {
-    id: string;
-  };
-};
+  description?: string;
+  status: "TODO" | "IN_PROGRESS" | "DONE";
+  type?: string;
+  priority?: string;
+  due_date?: string;
+  assignee?: string;
+  project: string;
+  projectId?: string;
+}
+
 
 // comp
 
@@ -53,11 +57,11 @@ function MyTasksSidebar() {
 
 
   const fetchUserTasks = () => {
-    if (!currentWorkspace || !user?.id) return;
+    if (!currentWorkspace || !user) return;
 
     const tasks = currentWorkspace.projects.flatMap((project) =>
       (project.tasks ?? [])
-        .filter((task) => task?.assignee?.id === user.id)
+        .filter((task) => task?.assignee === user)
         .map((task) => ({
           ...task,
           projectId: project.id, 

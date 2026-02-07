@@ -16,7 +16,6 @@ import CreateTaskDialog from "../components/CreateTaskDialog";
 import ProjectCalendar from "../components/ProjectCalendar";
 import ProjectTasks from "../components/ProjectTasks";
 
-
 import type { RootState } from "../app/store";
 import type { WorkspaceProject, Task } from "../features/workspaceSlice";
 
@@ -56,18 +55,17 @@ export default function ProjectDetail() {
           (m) => m.user.id === task.assignee
         );
 
-
         return {
-  ...task,
-  assignee: member
-    ? {
-        id: member.user.id,
-        name: `${member.user.first_name} ${member.user.last_name}`,
-        image: member.user.image,
-      }
-    : undefined,
-};
-
+          ...task,
+          projectId: found.id,
+          assignee: member
+            ? {
+                id: member.user.id,
+                name: `${member.user.first_name} ${member.user.last_name}`,
+                image: member.user.image,
+              }
+            : null,
+        };
       }) ?? [];
 
     setProject(found);

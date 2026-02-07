@@ -19,10 +19,21 @@ export interface WorkspaceProject {
 }
 
 
+// export interface Task {
+//   id: number;
+//   title: string;
+//   description?: string;
+//   status: "TODO" | "IN_PROGRESS" | "DONE";
+//   type?: string;
+//   priority?: string;
+//   due_date?: string;
+//   assignee?: string;
+//   project: string;
+// }
+
 export interface Task {
   id: number;
   title: string;
-  description?: string;
   status: "TODO" | "IN_PROGRESS" | "DONE";
   type?: string;
   priority?: string;
@@ -30,6 +41,7 @@ export interface Task {
   assignee?: string;
   project: string;
 }
+
 
 export interface ProjectMember {
   id: string;
@@ -148,6 +160,7 @@ const workspaceSlice = createSlice({
         );
       });
     },
+
     updateTask(state, action: PayloadAction<Task>) {
       if (!state.currentWorkspace) return;
 
@@ -177,9 +190,7 @@ const workspaceSlice = createSlice({
       project.tasks = project.tasks ?? [];
       project.tasks.push(action.payload);
     },
-    setProjectTasks: (state,
-      action: PayloadAction<{ projectId: string; tasks: any[] }>
-       ) => {
+    setProjectTasks: (state, action) => {
       const { projectId, tasks } = action.payload;
 
       const project = state.currentWorkspace?.projects.find(
