@@ -1,17 +1,45 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { getProjects } from "../api/projects";
 
+
 // types
+
+
+export type ProjectStatus ="PLANNING" | "ACTIVE" | "ON_HOLD" | "COMPLETED" | "CANCELLED";
+
+
+export type ProjectPriority = "LOW" | "MEDIUM" | "HIGH";
+
 export interface Project {
   id: string;
   name: string;
   description?: string;
-  status: string;
-  priority?: string;
+
+  status: ProjectStatus;
+  priority?: ProjectPriority;
+
   start_date?: string;
   end_date?: string;
-  workspace?: string;
+  created_at?: string;
+
+  workspace: string;
   tasks?: any[];
+
+  members?: {
+    id: string;
+    user: {
+      id: string;
+      email: string;
+      first_name?: string;
+      last_name?: string;
+      image?: string;
+    };
+    role: "admin" | "member";
+  }[];
+
+  //  members?: ProjectMember[];   // ✅ ADD
+  team_lead?: string; 
+  progress?: number;
 }
 
 
@@ -20,14 +48,12 @@ interface ProjectState {
   loading: boolean;
 }
 
-
 const initialState: ProjectState = {
   projects: [],
   loading: false,
 };
 
-
-
+// thunk
 export const fetchProjects = createAsyncThunk(
   "projects/fetchProjects",
   async () => {
@@ -36,16 +62,17 @@ export const fetchProjects = createAsyncThunk(
   }
 );
 
-  // slice
-
+// slice
 const projectSlice = createSlice({
   name: "projects",
   initialState,
+
   reducers: {
     setProjects(state, action: PayloadAction<Project[]>) {
       state.projects = action.payload;
     },
   },
+
   extraReducers: (builder) => {
     builder
       .addCase(fetchProjects.pending, (state) => {
@@ -60,6 +87,7 @@ const projectSlice = createSlice({
       });
   },
 });
+
 
 export const { setProjects } = projectSlice.actions;
 export default projectSlice.reducer;

@@ -12,10 +12,11 @@ import {
 import {
   CalendarIcon,
   Clock,
-  User,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+
+import type { Task } from "../features/workspaceSlice";
 
 // types
 type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE";
@@ -25,16 +26,6 @@ type TaskPriority = "LOW" | "MEDIUM" | "HIGH";
 interface UserType {
   id: string;
   name: string;
-}
-
-interface Task {
-  id: string;
-  title: string;
-  due_date?: string | Date;
-  status: TaskStatus;
-  type: TaskType;
-  priority: TaskPriority;
-  assignee?: UserType | null;
 }
 
 // ui maps
@@ -63,7 +54,6 @@ const ProjectCalendar: React.FC<ProjectCalendarProps> = ({ tasks }) => {
 
   const today = new Date();
 
-  // 🔒 SAFE DATE CONVERTER (KEY FIX)
   const getDate = (value?: string | Date): Date | null => {
     if (!value) return null;
     return value instanceof Date ? value : new Date(value);
@@ -105,7 +95,6 @@ const ProjectCalendar: React.FC<ProjectCalendarProps> = ({ tasks }) => {
 
   return (
     <div className="grid lg:grid-cols-3 gap-6">
-      {/* Calendar */}
       <div className="lg:col-span-2">
         <div className="not-dark:bg-white dark:bg-gradient-to-br dark:from-zinc-800/70 dark:to-zinc-900/50 border border-zinc-300 dark:border-zinc-800 rounded-lg p-4">
           <div className="flex items-center justify-between mb-4">
@@ -165,9 +154,7 @@ const ProjectCalendar: React.FC<ProjectCalendarProps> = ({ tasks }) => {
         </div>
       </div>
 
-      {/* Sidebar */}
       <div className="space-y-6">
-        {/* Upcoming */}
         <div className="bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 rounded-lg p-4">
           <h3 className="text-sm flex items-center gap-2 mb-3">
             <Clock className="w-4 h-4" /> Upcoming Tasks
@@ -181,12 +168,14 @@ const ProjectCalendar: React.FC<ProjectCalendarProps> = ({ tasks }) => {
             <div className="space-y-2">
               {upcomingTasks.map((task) => {
                 const d = getDate(task.due_date)!;
+                const taskType: TaskType = (task.type as TaskType) ?? "TASK";
+
                 return (
                   <div key={task.id} className="p-3 rounded bg-zinc-50">
                     <div className="flex justify-between">
                       <span>{task.title}</span>
-                      <span className={`text-xs px-2 ${typeColors[task.type]}`}>
-                        {task.type}
+                      <span className={`text-xs px-2 ${typeColors[taskType]}`}>
+                        {taskType}
                       </span>
                     </div>
                     <p className="text-xs">{format(d, "MMM d")}</p>
@@ -197,7 +186,6 @@ const ProjectCalendar: React.FC<ProjectCalendarProps> = ({ tasks }) => {
           )}
         </div>
 
-        {/* Overdue */}
         {overdueTasks.length > 0 && (
           <div className="border border-red-300 rounded-lg p-4">
             <h3 className="text-red-600 text-sm mb-3">

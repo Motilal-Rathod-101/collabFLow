@@ -2,9 +2,10 @@ from core.models import User
 from django.core.management.base import BaseCommand
 from workspaces.models import Workspace, WorkspaceMember
 from tasks.models import Task
-from projects.models import Project, ProjectMember 
+from projects.models import Project, ProjectMember
 from comments.models import Comment
 from django.utils.timezone import now
+from datetime import timedelta
 
 
 class Command(BaseCommand):
@@ -13,7 +14,6 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         self.stdout.write("Seeding database...")
 
-        # USERS
         user1, _ = User.objects.get_or_create(
             username="motilal",
             email="motilalrathod@gmail.com",
@@ -38,55 +38,90 @@ class Command(BaseCommand):
         user3.set_password("123456")
         user3.save()
 
-        # WORKSPACES
+
         ws1, _ = Workspace.objects.get_or_create(
             name="College Projects Workspace",
-            owner=user3
+            owner=user1
         )
 
         ws2, _ = Workspace.objects.get_or_create(
             name="Personal Project Workspace",
-            owner=user3
+            owner=user1
         )
 
-        # WORKSPACE MEMBERS
         for ws in [ws1, ws2]:
-            WorkspaceMember.objects.get_or_create(user=user1, workspace=ws, role="admin")
-            WorkspaceMember.objects.get_or_create(user=user2, workspace=ws, role="admin")
-            WorkspaceMember.objects.get_or_create(user=user3, workspace=ws, role="admin")
+            WorkspaceMember.objects.get_or_create(
+                user=user1, workspace=ws, role="admin"
+            )
+            WorkspaceMember.objects.get_or_create(
+                user=user2, workspace=ws, role="member"
+            )
+            WorkspaceMember.objects.get_or_create(
+                user=user3, workspace=ws, role="member"
+            )
 
-        # PROJECTS
+
         proj1, _ = Project.objects.get_or_create(
             name="CodeClub Platform",
             workspace=ws1,
-            defaults={"description": "A student community platform for coding resources."}
+            defaults={
+                "description": "A student community platform for coding resources.",
+                "status": "ACTIVE",
+                "priority": "HIGH",
+                "start_date": now().date(),
+                "end_date": (now() + timedelta(days=60)).date(),
+            }
         )
 
         proj2, _ = Project.objects.get_or_create(
             name="Simon Says Game",
             workspace=ws1,
-            defaults={"description": "Browser-based memory game with growing difficulty."}
+            defaults={
+                "description": "Browser-based memory game with growing difficulty.",
+                "status": "PLANNING",
+                "priority": "MEDIUM",
+                "start_date": now().date(),
+                "end_date": (now() + timedelta(days=30)).date(),
+            }
         )
 
         proj3, _ = Project.objects.get_or_create(
             name="Airbnb Clone",
             workspace=ws2,
-            defaults={"description": "Full-stack Airbnb clone with booking and auth."}
+            defaults={
+                "description": "Full-stack Airbnb clone with booking and auth.",
+                "status": "ACTIVE",
+                "priority": "HIGH",
+                "start_date": now().date(),
+                "end_date": (now() + timedelta(days=90)).date(),
+            }
         )
 
         proj4, _ = Project.objects.get_or_create(
             name="ChainStock Analysis",
             workspace=ws2,
-            defaults={"description": "Automation testing framework for regression and performance."}
+            defaults={
+                "description": "Automation testing framework for regression and performance.",
+                "status": "ON_HOLD",
+                "priority": "LOW",
+                "start_date": now().date(),
+                "end_date": (now() + timedelta(days=45)).date(),
+            }
         )
 
-        
-        for project in [proj1, proj2, proj3, proj4]:
-            ProjectMember.objects.get_or_create(user=user1, project=project, role="admin")
-            ProjectMember.objects.get_or_create(user=user2, project=project, role="admin")
-            ProjectMember.objects.get_or_create(user=user3, project=project, role="admin")
 
-        # TASKS
+        for project in [proj1, proj2, proj3, proj4]:
+            ProjectMember.objects.get_or_create(
+                user=user1, project=project, role="admin"
+            )
+            ProjectMember.objects.get_or_create(
+                user=user2, project=project, role="member"
+            )
+            ProjectMember.objects.get_or_create(
+                user=user3, project=project, role="member"
+            )
+
+
         task1, _ = Task.objects.get_or_create(
             title="Design Homepage UI",
             project=proj1,
@@ -126,6 +161,7 @@ class Command(BaseCommand):
             }
         )
 
+
         Comment.objects.get_or_create(
             task=task1,
             user=user2,
@@ -143,6 +179,7 @@ class Command(BaseCommand):
             user=user1,
             content="Don't forget to add password validation."
         )
+
 
         simple_tasks = [
             {
@@ -174,7 +211,9 @@ class Command(BaseCommand):
             if project.tasks.exists():
                 continue
 
-            members = WorkspaceMember.objects.filter(workspace=project.workspace)
+            members = WorkspaceMember.objects.filter(
+                workspace=project.workspace
+            )
             if not members.exists():
                 continue
 
@@ -192,4 +231,6 @@ class Command(BaseCommand):
                     due_date=now(),
                 )
 
-        self.stdout.write(self.style.SUCCESS("Database seeded successfully!"))
+        self.stdout.write(
+            self.style.SUCCESS("Database seeded successfully!")
+        )

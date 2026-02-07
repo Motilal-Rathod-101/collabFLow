@@ -8,7 +8,6 @@ import {
   BarChart3Icon,
   CalendarIcon,
   FileStackIcon,
-  ZapIcon,
 } from "lucide-react";
 
 import ProjectAnalytics from "../components/ProjectAnalytics";
@@ -17,22 +16,16 @@ import CreateTaskDialog from "../components/CreateTaskDialog";
 import ProjectCalendar from "../components/ProjectCalendar";
 import ProjectTasks from "../components/ProjectTasks";
 
+
 import type { RootState } from "../app/store";
-
-import type {
-  WorkspaceProject,
-  Task,
-} from "../features/workspaceSlice";
-
-type ProjectStatus =| "PLANNING"| "ACTIVE"| "ON_HOLD"| "COMPLETED"| "CANCELLED";
+import type { WorkspaceProject, Task } from "../features/workspaceSlice";
 
 export default function ProjectDetail() {
-  
-  const [searchParams, setSearchParams] = useSearchParams();
-  const tab = searchParams.get("tab") || "tasks";
-  const id = searchParams.get("id");
-
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const projectId = searchParams.get("id");
+  const tabFromUrl = searchParams.get("tab") || "tasks";
 
   const currentWorkspace = useSelector(
     (state: RootState) => state.workspace.currentWorkspace
@@ -43,52 +36,44 @@ export default function ProjectDetail() {
   const [project, setProject] = useState<WorkspaceProject | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [showCreateTask, setShowCreateTask] = useState(false);
-  const [activeTab, setActiveTab] = useState(tab);
+  const [activeTab, setActiveTab] = useState(tabFromUrl);
 
-  // sync tab with URL
+  // keep tab in sync with URL
   useEffect(() => {
-    setActiveTab(tab);
-  }, [tab]);
+    setActiveTab(tabFromUrl);
+  }, [tabFromUrl]);
 
-    useEffect(() => {
-    if (!id || projects.length === 0 || !currentWorkspace) return;
+  // find project + map tasks
+  useEffect(() => {
+    if (!projectId || !currentWorkspace) return;
 
-    const found = projects.find((p) => p.id === id) ?? null;
+    const found = projects.find((p) => p.id === projectId);
     if (!found) return;
-let formattedTasks: Task[] = [];
 
-if (found.tasks) {
-  formattedTasks = found.tasks.map((task: any) => {
-    let assignedUser = null;
+    const formattedTasks: Task[] =
+      found.tasks?.map((task: any) => {
+        const member = currentWorkspace.members.find(
+          (m) => m.user.id === task.assignee
+        );
 
-    for (let member of currentWorkspace.members) {
-      if (member.user.id === task.assignee) {
-        assignedUser = member;
-        break;
+
+        return {
+  ...task,
+  assignee: member
+    ? {
+        id: member.user.id,
+        name: `${member.user.first_name} ${member.user.last_name}`,
+        image: member.user.image,
       }
-    }
+    : undefined,
+};
 
-    return {
-      ...task,
-      projectId: found.id,
-      assignee: assignedUser
-        ? {
-            id: assignedUser.user.id,
-            name:
-              assignedUser.user.first_name +
-              " " +
-              assignedUser.user.last_name,
-            image: assignedUser.user.image,
-          }
-        : null,
-    };
-  });
-}
+      }) ?? [];
 
-setProject(found);
-setTasks(formattedTasks);
+    setProject(found);
+    setTasks(formattedTasks);
+  }, [projectId, projects, currentWorkspace]);
 
-  }, [id, projects, currentWorkspace]);
   if (!currentWorkspace) {
     return <div className="p-6">Loading workspace...</div>;
   }
@@ -96,7 +81,7 @@ setTasks(formattedTasks);
   if (!project) {
     return (
       <div className="p-6 text-center">
-        <p className="text-2xl mb-6">Project not found</p>
+        <p className="text-xl mb-4">Project not found</p>
         <button
           onClick={() => navigate("/projects")}
           className="px-4 py-2 bg-gray-200 rounded"
@@ -107,7 +92,7 @@ setTasks(formattedTasks);
     );
   }
 
-  const statusColors: Record<ProjectStatus, string> = {
+  const statusColors: Record<WorkspaceProject["status"], string> = {
     PLANNING: "bg-gray-200",
     ACTIVE: "bg-emerald-200",
     ON_HOLD: "bg-amber-200",
@@ -124,7 +109,9 @@ setTasks(formattedTasks);
             <ArrowLeftIcon className="w-4 h-4" />
           </button>
           <h1 className="text-xl font-semibold">{project.name}</h1>
-          <span className={`px-2 py-1 text-xs rounded ${statusColors[project.status]}`}>
+          <span
+            className={`px-2 py-1 text-xs rounded ${statusColors[project.status]}`}
+          >
             {project.status}
           </span>
         </div>
@@ -146,7 +133,7 @@ setTasks(formattedTasks);
         />
         <Stat
           label="In Progress"
-          value={tasks.filter((t) => t.status !== "DONE").length}
+          value={tasks.filter((t) => t.status === "IN_PROGRESS").length}
         />
         <Stat
           label="Team Members"
@@ -166,7 +153,7 @@ setTasks(formattedTasks);
             key={t.key}
             onClick={() => {
               setActiveTab(t.key);
-              setSearchParams({ id: id!, tab: t.key });
+              setSearchParams({ id: projectId!, tab: t.key });
             }}
             className={`px-4 py-2 flex items-center gap-2 ${
               activeTab === t.key ? "bg-gray-200" : ""
@@ -182,11 +169,15 @@ setTasks(formattedTasks);
       {activeTab === "tasks" && <ProjectTasks tasks={tasks} />}
       {activeTab === "calendar" && <ProjectCalendar tasks={tasks} />}
       {activeTab === "analytics" && (
-        <ProjectAnalytics tasks={tasks} project={project} />
+        <ProjectAnalytics
+          tasks={tasks}
+          project={project}
+          membersCount={currentWorkspace.members.length}
+        />
       )}
       {activeTab === "settings" && <ProjectSettings project={project} />}
 
-      {/* Modal */}
+      {/* Create Task */}
       {showCreateTask && (
         <CreateTaskDialog
           showCreateTask={showCreateTask}

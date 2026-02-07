@@ -26,3 +26,4 @@ class WorkspaceSerializer(serializers.ModelSerializer):
             "members", 
             "projects",
         ]
+        read_only_fields = ["owner"]   

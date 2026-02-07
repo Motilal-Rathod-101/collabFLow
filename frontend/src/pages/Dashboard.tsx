@@ -1,14 +1,8 @@
 import { Plus } from "lucide-react";
-import { useState, useEffect } from "react";
-// import { useDispatch } from "react-redux";
-import { useSelector } from "react-redux";
-import type { RootState} from "../app/store";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import type { AppDispatch, RootState } from "../app/store";
 import { fetchWorkspaces } from "../features/workspaceSlice";
-import { fetchProjects } from "../features/projectsSlice";
-
-import { useAppDispatch } from "../app/hooks";
-
-
 
 import StatsGrid from "../components/StatsGrid";
 import ProjectOverview from "../components/ProjectOverview";
@@ -16,72 +10,60 @@ import RecentActivity from "../components/RecentActivity";
 import TasksSummary from "../components/TasksSummary";
 import CreateProjectDialog from "../components/CreateProjectDialog";
 
-import "./Dashboard.css";
-
 const Dashboard = () => {
-  const dispatch = useAppDispatch();
-  
-  const user = { fullName: "User" };
+  const dispatch = useDispatch<AppDispatch>();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-//  const dispatch = useAppDispatch();
-  const { workspaces, loading } = useSelector(
+  const { isAuthenticated } = useSelector(
+    (state: RootState) => state.auth
+  );
+
+  const { currentWorkspace, loading } = useSelector(
     (state: RootState) => state.workspace
   );
-  
+
   useEffect(() => {
-    // PREVENT INFINITE API CALLS
-    if (!loading && workspaces.length === 0) {
+    if (isAuthenticated) {
       dispatch(fetchWorkspaces());
     }
+  }, [dispatch, isAuthenticated]);
 
-        if (!loading && workspaces.length === 0) {
-           dispatch(fetchProjects());
-         }
+  if (loading) return <div className="p-6">Loading...</div>;
 
-  }, [dispatch, loading, workspaces.length]);
+  if (!currentWorkspace) {
+    return <div className="p-6 text-center">No workspace found</div>;
+  }
 
   return (
-    <div className="max-w-6xl mx-auto dashboard-container">
-      {/* Header */}
-      <div className="flex justify-between items-start gap-6 mb-6 dashboard-header">
-        <div>
-          <h1 className="text-2xl font-semibold mb-1 dashboard-title">
-            Welcome back, {user?.fullName || "User"}
-          </h1>
-          <p className="text-sm dashboard-subtitle">
-            Here's what's happening with your projects today
-          </p>
-        </div>
+    <div className="max-w-6xl mx-auto space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-semibold">
+          Workspace: {currentWorkspace.name}
+        </h1>
 
         <button
           onClick={() => setIsDialogOpen(true)}
-          className="flex items-center gap-2 px-5 py-2 text-sm rounded transition dashboard-btn"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded"
         >
           <Plus size={16} /> New Project
         </button>
-
-        {/* Dialog */}
-        <CreateProjectDialog
-          isDialogOpen={isDialogOpen}
-          setIsDialogOpen={setIsDialogOpen}
-        />
       </div>
 
-      {/* Stats */}
       <StatsGrid />
 
-      {/* Main Content */}
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
           <ProjectOverview openDialog={() => setIsDialogOpen(true)} />
           <RecentActivity />
         </div>
 
-        <div>
-          <TasksSummary />
-        </div>
+        <TasksSummary />
       </div>
+
+      <CreateProjectDialog
+        isDialogOpen={isDialogOpen}
+        setIsDialogOpen={setIsDialogOpen}
+      />
     </div>
   );
 };

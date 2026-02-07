@@ -10,7 +10,7 @@ interface TeamMember {
   role: string;
   user: {
     id: string;
-    username: string;
+    username?: string;
     first_name: string;
     last_name: string;
     email: string;
@@ -141,13 +141,10 @@ const filteredUsers = users.filter(
                   className="hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors"
                 >
                   <td className="px-6 py-2.5 flex items-center gap-3">
-                    <img
-                      src={user.user.image}
-                      //   src={userImg}
-                      // src="userImgCollabflow.png"
-                      alt={user.user.first_name}
-                      className="w-7 h-7 rounded-full bg-gray-200 dark:bg-zinc-800"
-                    />
+                    <div className="w-6 h-6 rounded bg-blue-600 text-white flex items-center justify-center text-xs font-semibold">
+                      {user.user.first_name[0]}
+                    </div>
+
                     <span className="text-sm text-zinc-800 dark:text-white truncate">
                      {user.user.first_name} {user.user.last_name}
                     </span>

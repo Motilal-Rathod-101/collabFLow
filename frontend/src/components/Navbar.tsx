@@ -1,17 +1,27 @@
-import { SearchIcon, PanelLeft, MoonIcon, SunIcon } from 'lucide-react'
-import { useDispatch, useSelector } from 'react-redux'
-import { toggleTheme } from '../features/themeSlice'
-import { assets } from '../assets/assets'
-import type { RootState, AppDispatch } from '../app/store'
+import { SearchIcon, PanelLeft, MoonIcon, SunIcon } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import { toggleTheme } from "../features/themeSlice";
+import type { RootState, AppDispatch } from "../app/store";
+
+import { logout as logoutApi } from "../api/auth";
+import { logout as logoutAction } from "../features/authSlice";
+import { useNavigate } from "react-router-dom";
+
+
 
 interface NavbarProps {
-  // optional 
-  setIsSidebarOpen?: React.Dispatch<React.SetStateAction<boolean>>
+  setIsSidebarOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
+
+
 const Navbar: React.FC<NavbarProps> = ({ setIsSidebarOpen }) => {
-  const dispatch = useDispatch<AppDispatch>()
-  const theme = useSelector((state: RootState) => state.theme.theme)
+
+  const { user } = useSelector((state: RootState) => state.auth);
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+  const theme = useSelector((state: RootState) => state.theme.theme);
+
 
   return (
     <div className="w-full bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 px-6 xl:px-16 py-3 flex-shrink-0">
@@ -19,8 +29,6 @@ const Navbar: React.FC<NavbarProps> = ({ setIsSidebarOpen }) => {
 
         {/* Left section */}
         <div className="flex items-center gap-4 min-w-0 flex-1">
-
-          {/* Search Input */}
           <div className="relative flex-1 max-w-sm">
             <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-400 size-3.5" />
             <input
@@ -38,18 +46,40 @@ const Navbar: React.FC<NavbarProps> = ({ setIsSidebarOpen }) => {
             onClick={() => dispatch(toggleTheme())}
             className="size-8 flex items-center justify-center bg-white dark:bg-zinc-800 shadow rounded-lg transition hover:scale-105 active:scale-95"
           >
-            {theme === 'light'
-              ? <MoonIcon className="size-4 text-gray-800 dark:text-gray-200" />
-              : <SunIcon className="size-4 text-yellow-400" />
-            }
+            {theme === "light" ? (
+              <MoonIcon className="size-4 text-gray-800 dark:text-gray-200" />
+            ) : (
+              <SunIcon className="size-4 text-yellow-400" />
+            )}
           </button>
 
-          {/* User detail btn */}
-          <img src={assets.profile_img_a} alt="User Img" className="size-7 rounded-full" />
+          {/* User image */}
+          {/* <img
+            src={assets.profile_img_a}
+            alt="User Img"
+            className="size-7 rounded-full"
+          /> */}
+          <div className="size-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-semibold">
+            {user?.username?.charAt(0).toUpperCase() || "M"}
+        </div>
+
+
+
+          {/* Logout */}
+          <button
+            onClick={() => {
+              dispatch(logoutAction()); // redux state
+              logoutApi();              // localStorage
+              navigate("/login");       
+            }}
+            className="text-sm px-3 py-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          >
+            Logout
+          </button>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Navbar
+export default Navbar;

@@ -1,13 +1,25 @@
 import { useState, useEffect, ChangeEvent } from "react";
 import { useSelector } from "react-redux";
 import { Plus, Search, FolderOpen } from "lucide-react";
+
 import ProjectCard from "../components/ProjectCard";
 import CreateProjectDialog from "../components/CreateProjectDialog";
+import EditProjectDialog from "../components/EditProjectDialog";
+
 import type { RootState } from "../app/store";
 import type { Project } from "../features/projectsSlice";
 
-
 export default function Projects() {
+  //create dialog
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  // edit dialog
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
+
+  // search
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
 
   const currentWorkspace = useSelector(
     (state: RootState) => state.workspace.currentWorkspace
@@ -15,10 +27,7 @@ export default function Projects() {
 
   const projects = currentWorkspace?.projects ?? [];
 
-const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-
+  //filter logic
   useEffect(() => {
     let filtered = projects;
 
@@ -33,8 +42,15 @@ const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
     setFilteredProjects(filtered);
   }, [projects, searchTerm]);
 
-  const handleSearch = (e: ChangeEvent<HTMLInputElement>) =>
+  const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
+  };
+
+  // open edit dialog
+  const handleEditProject = (project: Project) => {
+    setEditingProject(project);
+    setIsEditOpen(true);
+  };
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
@@ -53,11 +69,6 @@ const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
         >
           <Plus className="w-4 h-4 mr-2" /> New Project
         </button>
-
-        <CreateProjectDialog
-          isDialogOpen={isDialogOpen}
-          setIsDialogOpen={setIsDialogOpen}
-        />
       </div>
 
       {/* Search */}
@@ -71,7 +82,7 @@ const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
         />
       </div>
 
-      {/* Projects  */}
+      {/* Projects Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredProjects.length === 0 ? (
           <div className="col-span-full text-center py-16">
@@ -80,10 +91,27 @@ const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
           </div>
         ) : (
           filteredProjects.map((project) => (
-            <ProjectCard key={project.id} project={project} />
+            <ProjectCard
+              key={project.id}
+              project={project}
+              onEdit={handleEditProject}
+            />
           ))
         )}
       </div>
+
+      {/* Create Project */}
+      <CreateProjectDialog
+        isDialogOpen={isDialogOpen}
+        setIsDialogOpen={setIsDialogOpen}
+      />
+
+      {/* Edit Project */}
+      <EditProjectDialog
+        isDialogOpen={isEditOpen}
+        setIsDialogOpen={setIsEditOpen}
+        project={editingProject}
+      />
     </div>
   );
 }

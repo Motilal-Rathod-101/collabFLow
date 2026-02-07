@@ -4,9 +4,15 @@ import { useSelector } from "react-redux";
 import type { RootState } from "../app/store";
 import "./CreateProjectDialog.css";
 
+import { createProject } from "../api/projects";
+import { useDispatch } from "react-redux";
+import { addProject } from "../features/workspaceSlice";
+
+
 interface CreateProjectDialogProps {
   isDialogOpen: boolean;
   setIsDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  
 }
 
 interface FormData {
@@ -40,9 +46,27 @@ const CreateProjectDialog = ({
   });
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const dispatch = useDispatch();
+
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!currentWorkspace) return;
+
+    setIsSubmitting(true);
+
+    try {
+      const project = await createProject({
+        name: formData.name,
+        description: formData.description,
+        workspace: currentWorkspace.id,
+      });
+
+      dispatch(addProject(project));
+      setIsDialogOpen(false);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const removeTeamMember = (email: string) => {
