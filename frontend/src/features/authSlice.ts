@@ -1,7 +1,7 @@
-import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { login as loginApi } from "../api/auth";
+import { jwtDecode } from "jwt-decode";
 
-// type
 type LoginPayload = {
   username: string;
   password: string;
@@ -9,8 +9,6 @@ type LoginPayload = {
 
 export interface User {
   id: string;
-  username: string;
-  email?: string;
 }
 
 interface AuthState {
@@ -19,14 +17,27 @@ interface AuthState {
   isAuthenticated: boolean;
 }
 
+// safe decode on app reload
+const getUserFromToken = (): User | null => {
+  const token = localStorage.getItem("access");
+  if (!token) return null;
+
+  try {
+    const decoded: any = jwtDecode(token);
+    return { id: decoded.user_id };
+  } catch {
+    localStorage.removeItem("access");
+    localStorage.removeItem("refresh");
+    return null;
+  }
+};
 
 const initialState: AuthState = {
-  user: null,
+  user: getUserFromToken(),
   loading: false,
   isAuthenticated: !!localStorage.getItem("access"),
 };
 
-// thunk
 export const login = createAsyncThunk(
   "auth/login",
   async (data: LoginPayload) => {
@@ -34,11 +45,11 @@ export const login = createAsyncThunk(
 
     localStorage.setItem("access", res.data.access);
     localStorage.setItem("refresh", res.data.refresh);
-    return res.data; 
+
+    return res.data.access;
   }
 );
 
-// slice
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -47,7 +58,6 @@ const authSlice = createSlice({
     logout(state) {
       localStorage.removeItem("access");
       localStorage.removeItem("refresh");
-
       state.user = null;
       state.isAuthenticated = false;
       state.loading = false;
@@ -59,13 +69,13 @@ const authSlice = createSlice({
       .addCase(login.pending, (state) => {
         state.loading = true;
       })
-
-      .addCase(login.fulfilled, (state, action: PayloadAction<any>) => {
+      .addCase(login.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
-        state.user = action.payload.user;
-      })
 
+        const decoded: any = jwtDecode(action.payload);
+        state.user = { id: decoded.user_id };
+      })
       .addCase(login.rejected, (state) => {
         state.loading = false;
         state.isAuthenticated = false;

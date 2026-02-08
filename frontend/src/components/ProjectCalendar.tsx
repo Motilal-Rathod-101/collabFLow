@@ -22,6 +22,9 @@ import type { Task } from "../features/workspaceSlice";
 type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE";
 type TaskType = "BUG" | "FEATURE" | "TASK" | "IMPROVEMENT" | "OTHER";
 type TaskPriority = "LOW" | "MEDIUM" | "HIGH";
+interface Props {
+  tasks: Task[];
+}
 
 interface UserType {
   id: string;

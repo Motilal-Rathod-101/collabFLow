@@ -1,8 +1,12 @@
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown, Check, Plus } from "lucide-react";
+import { ChevronDown, Check, Plus, Trash2 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "../app/store";
-import { setCurrentWorkspace } from "../features/workspaceSlice";
+import {
+  setCurrentWorkspace,
+  removeWorkspace,
+} from "../features/workspaceSlice";
+import { deleteWorkspace } from "../api/workspaces";
 import CreateWorkspaceDialog from "./CreateWorkspaceDialog";
 
 function WorkspaceDropdown() {
@@ -12,6 +16,8 @@ function WorkspaceDropdown() {
   const { workspaces, currentWorkspace } = useSelector(
     (state: RootState) => state.workspace
   );
+
+  const authUser = useSelector((state: RootState) => state.auth.user);
 
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const dispatch = useDispatch();
@@ -37,6 +43,35 @@ function WorkspaceDropdown() {
     setIsOpen(false);
   };
 
+  const isAdmin = (workspaceId: string) => {
+    const ws = workspaces.find(w => w.id === workspaceId);
+    if (!ws || !authUser) return false;
+
+    const member = ws.members.find(
+      (m) => m.user.id === authUser.id
+    );
+
+    return member?.role === "admin";
+  };
+
+  // delete
+  const handleDeleteWorkspace = async (
+    e: React.MouseEvent,
+    id: string
+  ) => {
+    e.stopPropagation();
+
+    try {
+      await deleteWorkspace(id);
+      dispatch(removeWorkspace(id));
+    } catch (error: any) {
+      alert(
+        error?.response?.data?.detail ||
+          "You are not allowed to delete this workspace"
+      );
+    }
+  };
+
   return (
     <div className="relative m-4" ref={dropdownRef}>
       {/* Trigger */}
@@ -45,7 +80,6 @@ function WorkspaceDropdown() {
         className="w-full flex items-center justify-between p-3 rounded hover:bg-gray-100 dark:hover:bg-zinc-800 transition"
       >
         <div className="flex items-center gap-3">
-          {/* Placeholder workspace icon */}
           <div className="w-8 h-8 rounded bg-blue-600 text-white flex items-center justify-center text-sm font-semibold">
             {currentWorkspace?.name?.[0] || "W"}
           </div>
@@ -75,19 +109,33 @@ function WorkspaceDropdown() {
             {workspaces.map((ws) => (
               <div
                 key={ws.id}
-                onClick={() => onSelectWorkspace(ws.id)}
-                className="flex items-center gap-3 p-2 cursor-pointer rounded hover:bg-gray-100 dark:hover:bg-zinc-800"
+                className="group flex items-center justify-between p-2 rounded hover:bg-gray-100 dark:hover:bg-zinc-800"
               >
-                <div className="w-6 h-6 rounded bg-blue-600 text-white flex items-center justify-center text-xs font-semibold">
-                  {ws.name[0]}
-                </div>
+                {/* LEFT: Select workspace */}
+                <div
+                  onClick={() => onSelectWorkspace(ws.id)}
+                  className="flex items-center gap-3 cursor-pointer flex-1 min-w-0"
+                >
+                  <div className="w-6 h-6 rounded bg-blue-600 text-white flex items-center justify-center text-xs font-semibold">
+                    {ws.name[0]}
+                  </div>
 
-                <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{ws.name}</p>
+
+                  {currentWorkspace?.id === ws.id && (
+                    <Check className="w-4 h-4 text-blue-600" />
+                  )}
                 </div>
 
-                {currentWorkspace?.id === ws.id && (
-                  <Check className="w-4 h-4 text-blue-600" />
+                {/* RIGHT: Delete (admin only) */}
+                {isAdmin(ws.id) && (
+                  <button
+                    onClick={(e) => handleDeleteWorkspace(e, ws.id)}
+                    className="opacity-0 group-hover:opacity-100 text-blue-500 hover:text-red-600 transition ml-2"
+                    title="Delete workspace"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 )}
               </div>
             ))}
@@ -109,7 +157,6 @@ function WorkspaceDropdown() {
         </div>
       )}
 
-      {/* Dialog */}
       <CreateWorkspaceDialog
         show={showCreateWorkspace}
         onClose={() => setShowCreateWorkspace(false)}

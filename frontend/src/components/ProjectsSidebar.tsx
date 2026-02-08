@@ -19,6 +19,7 @@ type Project = {
 type SubItem = {
   title: string;
   icon: React.ElementType;
+  tab: string;
   url: string;
 };
 
@@ -27,7 +28,7 @@ const ProjectsSidebar = () => {
   const [searchParams] = useSearchParams();
 
   const projectIdFromUrl = searchParams.get("id");
-  const tabFromUrl = searchParams.get("tab") || "tasks";
+  const activeTab = searchParams.get("tab") || "tasks";
 
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(
     new Set()
@@ -51,10 +52,30 @@ const ProjectsSidebar = () => {
   }, [projectIdFromUrl]);
 
   const getProjectSubItems = (projectId: string): SubItem[] => [
-    { title: 'Tasks', icon: KanbanIcon, url: `/projectsDetail?id=${projectId}&tab=tasks` },
-    { title: 'Analytics', icon: ChartColumnIcon, url: `/projectsDetail?id=${projectId}&tab=analytics` },
-    { title: 'Calendar', icon: CalendarIcon, url: `/projectsDetail?id=${projectId}&tab=calendar` },
-    { title: 'Settings', icon: SettingsIcon, url: `/projectsDetail?id=${projectId}&tab=settings` },
+    {
+      title: "Tasks",
+      tab: "tasks",
+      icon: KanbanIcon,
+      url: `/projectsDetail?id=${projectId}&tab=tasks`,
+    },
+    {
+      title: "Analytics",
+      tab: "analytics",
+      icon: ChartColumnIcon,
+      url: `/projectsDetail?id=${projectId}&tab=analytics`,
+    },
+    {
+      title: "Calendar",
+      tab: "calendar",
+      icon: CalendarIcon,
+      url: `/projectsDetail?id=${projectId}&tab=calendar`,
+    },
+    {
+      title: "Settings",
+      tab: "settings",
+      icon: SettingsIcon,
+      url: `/projectsDetail?id=${projectId}&tab=settings`,
+    },
   ];
 
   const toggleProject = (id: string) => {
@@ -87,20 +108,22 @@ const ProjectsSidebar = () => {
             >
               <ChevronRightIcon
                 className={`size-3 transition-transform ${
-                  expandedProjects.has(project.id) && 'rotate-90'
+                  expandedProjects.has(project.id) ? "rotate-90" : ""
                 }`}
               />
               <div className="size-2 rounded-full bg-blue-500" />
-              <span className="truncate max-w-40 text-sm">{project.name}</span>
+              <span className="truncate max-w-40 text-sm">
+                {project.name}
+              </span>
             </button>
 
             {expandedProjects.has(project.id) && (
               <div className="ml-5 mt-1 space-y-1">
                 {getProjectSubItems(project.id).map((subItem) => {
                   const isActive =
-                    location.pathname === '/projectsDetail' &&
-                    searchParams.get('id') === project.id &&
-                    searchParams.get('tab') === subItem.title.toLowerCase()
+                    location.pathname === "/projectsDetail" &&
+                    projectIdFromUrl === project.id &&
+                    activeTab === subItem.tab;
 
                   return (
                     <Link
@@ -108,14 +131,14 @@ const ProjectsSidebar = () => {
                       to={subItem.url}
                       className={`flex items-center gap-3 px-3 py-1.5 rounded-lg text-xs ${
                         isActive
-                          ? 'bg-blue-100 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400'
-                          : 'text-gray-600 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800'
+                          ? "bg-blue-100 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400"
+                          : "text-gray-600 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800"
                       }`}
                     >
                       <subItem.icon className="size-3" />
                       {subItem.title}
                     </Link>
-                  )
+                  );
                 })}
               </div>
             )}
@@ -123,7 +146,7 @@ const ProjectsSidebar = () => {
         ))}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ProjectsSidebar
+export default ProjectsSidebar;

@@ -17,7 +17,11 @@ import ProjectCalendar from "../components/ProjectCalendar";
 import ProjectTasks from "../components/ProjectTasks";
 
 import type { RootState } from "../app/store";
-import type { WorkspaceProject, Task } from "../features/workspaceSlice";
+import type { Project } from "../features/workspaceSlice";
+import type { Task } from "../components/ProjectTasks";
+
+import type { Task as UITask } from "../components/ProjectTasks";
+import type { Task as WorkspaceTask } from "../features/workspaceSlice";
 
 export default function ProjectDetail() {
   const navigate = useNavigate();
@@ -32,7 +36,7 @@ export default function ProjectDetail() {
 
   const projects = currentWorkspace?.projects ?? [];
 
-  const [project, setProject] = useState<WorkspaceProject | null>(null);
+  const [project, setProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [activeTab, setActiveTab] = useState(tabFromUrl);
@@ -49,27 +53,15 @@ export default function ProjectDetail() {
     const found = projects.find((p) => p.id === projectId);
     if (!found) return;
 
-    const formattedTasks: Task[] =
-      found.tasks?.map((task: any) => {
-        const member = currentWorkspace.members.find(
-          (m) => m.user.id === task.assignee
-        );
-
-        return {
-          ...task,
-          projectId: found.id,
-          assignee: member
-            ? {
-                id: member.user.id,
-                name: `${member.user.first_name} ${member.user.last_name}`,
-                image: member.user.image,
-              }
-            : null,
-        };
-      }) ?? [];
-
     setProject(found);
-    setTasks(formattedTasks);
+    const mappedTasks: Task[] =
+      found.tasks?.map((task: any) => ({
+        ...task,
+        projectId: found.id,
+      })) ?? [];
+
+setTasks(mappedTasks);
+
   }, [projectId, projects, currentWorkspace]);
 
   if (!currentWorkspace) {
@@ -90,7 +82,7 @@ export default function ProjectDetail() {
     );
   }
 
-  const statusColors: Record<WorkspaceProject["status"], string> = {
+  const statusColors: Record<Project["status"], string> = {
     PLANNING: "bg-gray-200",
     ACTIVE: "bg-emerald-200",
     ON_HOLD: "bg-amber-200",

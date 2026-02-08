@@ -1,12 +1,12 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { getProjects } from "../api/projects";
 
-
-// types
-
-
-export type ProjectStatus ="PLANNING" | "ACTIVE" | "ON_HOLD" | "COMPLETED" | "CANCELLED";
-
+export type ProjectStatus =
+  | "PLANNING"
+  | "ACTIVE"
+  | "ON_HOLD"
+  | "COMPLETED"
+  | "CANCELLED";
 
 export type ProjectPriority = "LOW" | "MEDIUM" | "HIGH";
 
@@ -14,17 +14,13 @@ export interface Project {
   id: string;
   name: string;
   description?: string;
-
   status: ProjectStatus;
   priority?: ProjectPriority;
-
   start_date?: string;
   end_date?: string;
   created_at?: string;
-
   workspace: string;
   tasks?: any[];
-
   members?: {
     id: string;
     user: {
@@ -36,12 +32,9 @@ export interface Project {
     };
     role: "admin" | "member";
   }[];
-
-  //  members?: ProjectMember[];   // ✅ ADD
-  team_lead?: string; 
+  team_lead?: string;
   progress?: number;
 }
-
 
 interface ProjectState {
   projects: Project[];
@@ -53,7 +46,6 @@ const initialState: ProjectState = {
   loading: false,
 };
 
-// thunk
 export const fetchProjects = createAsyncThunk(
   "projects/fetchProjects",
   async () => {
@@ -62,7 +54,6 @@ export const fetchProjects = createAsyncThunk(
   }
 );
 
-// slice
 const projectSlice = createSlice({
   name: "projects",
   initialState,
@@ -87,7 +78,6 @@ const projectSlice = createSlice({
       });
   },
 });
-
 
 export const { setProjects } = projectSlice.actions;
 export default projectSlice.reducer;

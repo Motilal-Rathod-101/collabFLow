@@ -6,7 +6,7 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const access = localStorage.getItem("access");
-  if (access) {
+  if (access && config.headers) {
     config.headers.Authorization = `Bearer ${access}`;
   }
   return config;
@@ -15,13 +15,22 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const originalRequest = error.config;
+    const originalRequest = error.config as any;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry
+    ) {
       originalRequest._retry = true;
 
       try {
         const refresh = localStorage.getItem("refresh");
+
+        if (!refresh) {
+          localStorage.clear();
+          window.location.href = "/login";
+          return Promise.reject(error);
+        }
 
         const res = await axios.post(
           "http://127.0.0.1:8000/api/auth/refresh/",
@@ -29,6 +38,7 @@ api.interceptors.response.use(
         );
 
         localStorage.setItem("access", res.data.access);
+
         originalRequest.headers.Authorization = `Bearer ${res.data.access}`;
 
         return api(originalRequest);

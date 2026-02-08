@@ -1,8 +1,7 @@
 import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { getWorkspaces } from "../api/workspaces";
 
-/* ========= TYPES ========= */
-
+// types
 export interface User {
   id: string;
   username: string;
@@ -11,25 +10,6 @@ export interface User {
   email: string;
   image?: string;
 }
-export interface WorkspaceProject {
-  id: string;
-  name: string;
-  status: "PLANNING" | "ACTIVE" | "ON_HOLD" | "COMPLETED" | "CANCELLED";
-  tasks?: Task[];
-}
-
-
-// export interface Task {
-//   id: number;
-//   title: string;
-//   description?: string;
-//   status: "TODO" | "IN_PROGRESS" | "DONE";
-//   type?: string;
-//   priority?: string;
-//   due_date?: string;
-//   assignee?: string;
-//   project: string;
-// }
 
 export interface Task {
   id: number;
@@ -42,7 +22,6 @@ export interface Task {
   project: string;
 }
 
-
 export interface ProjectMember {
   id: string;
   role: "admin" | "member";
@@ -50,11 +29,25 @@ export interface ProjectMember {
   user: User;
 }
 
+// export interface Project {
+//   id: string;
+//   name: string;
+//   description?: string;
+//   status: "PLANNING" | "ACTIVE" | "ON_HOLD" | "COMPLETED";
+//   priority?: string;
+//   start_date?: string;
+//   end_date?: string;
+//   created_at: string;
+//   workspace: string;
+//   tasks: Task[];
+//   members: ProjectMember[];
+// }
+
 export interface Project {
   id: string;
   name: string;
   description?: string;
-  status: "PLANNING" | "ACTIVE" | "ON_HOLD" | "COMPLETED";
+  status: "PLANNING" | "ACTIVE" | "ON_HOLD" | "COMPLETED" | "CANCELLED";
   priority?: string;
   start_date?: string;
   end_date?: string;
@@ -63,6 +56,7 @@ export interface Project {
   tasks: Task[];
   members: ProjectMember[];
 }
+
 
 export interface WorkspaceMember {
   id: string;
@@ -85,15 +79,11 @@ interface WorkspaceState {
   loading: boolean;
 }
 
-/* ========= STATE ========= */
-
 const initialState: WorkspaceState = {
   workspaces: [],
   currentWorkspace: null,
   loading: false,
 };
-
-/* ========= THUNK ========= */
 
 export const fetchWorkspaces = createAsyncThunk(
   "workspace/fetchWorkspaces",
@@ -102,38 +92,58 @@ export const fetchWorkspaces = createAsyncThunk(
   }
 );
 
-/* ========= SLICE ========= */
-
 const workspaceSlice = createSlice({
   name: "workspace",
   initialState,
 
   reducers: {
     setCurrentWorkspace(state, action: PayloadAction<string>) {
-      const found = state.workspaces.find(w => w.id === action.payload) || null;
+      const found =
+        state.workspaces.find((w) => w.id === action.payload) || null;
+
       state.currentWorkspace = found;
 
       if (found) {
         localStorage.setItem("currentWorkspaceId", found.id);
       }
     },
+
     addWorkspace(state, action: PayloadAction<Workspace>) {
       state.workspaces.push(action.payload);
     },
 
+    removeWorkspace(state, action: PayloadAction<string>) {
+      state.workspaces = state.workspaces.filter(
+        (w) => w.id !== action.payload
+      );
+
+      if (state.currentWorkspace?.id === action.payload) {
+        state.currentWorkspace = state.workspaces[0] || null;
+
+        if (state.currentWorkspace) {
+          localStorage.setItem(
+            "currentWorkspaceId",
+            state.currentWorkspace.id
+          );
+        } else {
+          localStorage.removeItem("currentWorkspaceId");
+        }
+      }
+    },
 
     addProject(state, action: PayloadAction<Project>) {
       if (!state.currentWorkspace) return;
       state.currentWorkspace.projects.push(action.payload);
     },
+
     removeProject(state, action: PayloadAction<string>) {
       if (!state.currentWorkspace) return;
-
       state.currentWorkspace.projects =
         state.currentWorkspace.projects.filter(
           (p) => p.id !== action.payload
         );
     },
+
     updateProject(state, action: PayloadAction<any>) {
       if (!state.currentWorkspace) return;
 
@@ -142,14 +152,12 @@ const workspaceSlice = createSlice({
       );
 
       if (index !== -1) {
-        // IMPORTANT: replace object (new reference)
         state.currentWorkspace.projects[index] = {
           ...state.currentWorkspace.projects[index],
           ...action.payload,
         };
       }
     },
-
 
     deleteTask(state, action: PayloadAction<number[]>) {
       if (!state.currentWorkspace) return;
@@ -165,19 +173,20 @@ const workspaceSlice = createSlice({
       if (!state.currentWorkspace) return;
 
       const project = state.currentWorkspace.projects.find(
-        p => p.id === action.payload.project
+        (p) => p.id === action.payload.project
       );
 
       if (!project) return;
 
       const index = project.tasks.findIndex(
-        t => t.id === action.payload.id
+        (t) => t.id === action.payload.id
       );
 
       if (index !== -1) {
         project.tasks[index] = action.payload;
       }
     },
+
     addTask(state, action: PayloadAction<any>) {
       if (!state.currentWorkspace) return;
 
@@ -190,7 +199,8 @@ const workspaceSlice = createSlice({
       project.tasks = project.tasks ?? [];
       project.tasks.push(action.payload);
     },
-    setProjectTasks: (state, action) => {
+
+    setProjectTasks(state, action: PayloadAction<{ projectId: string; tasks: Task[] }>) {
       const { projectId, tasks } = action.payload;
 
       const project = state.currentWorkspace?.projects.find(
@@ -201,9 +211,6 @@ const workspaceSlice = createSlice({
         project.tasks = tasks;
       }
     },
-
-    
-
   },
 
   extraReducers: (builder) => {
@@ -218,7 +225,7 @@ const workspaceSlice = createSlice({
         const savedId = localStorage.getItem("currentWorkspaceId");
 
         state.currentWorkspace =
-          action.payload.find(w => w.id === savedId) ||
+          action.payload.find((w) => w.id === savedId) ||
           action.payload[0] ||
           null;
       })
@@ -228,10 +235,11 @@ const workspaceSlice = createSlice({
   },
 });
 
-export const { 
+export const {
   setCurrentWorkspace,
   addProject,
   addWorkspace,
+  removeWorkspace,
   removeProject,
   updateProject,
   deleteTask,
@@ -239,4 +247,5 @@ export const {
   addTask,
   setProjectTasks,
 } = workspaceSlice.actions;
+
 export default workspaceSlice.reducer;

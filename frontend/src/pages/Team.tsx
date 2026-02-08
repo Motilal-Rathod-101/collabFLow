@@ -7,7 +7,7 @@ import InviteMemberDialog from "../components/InviteMemberDialog";
 
 interface TeamMember {
   id: string;
-  role: string;
+  role: "admin" | "member";
   user: {
     id: string;
     username?: string;
@@ -17,9 +17,6 @@ interface TeamMember {
     image?: string;
   };
 }
-
-
-
 
 interface Project {
   id: string;
@@ -32,79 +29,102 @@ interface TeamTask {
   status: string;
 }
 
-
-
 export default function Team() {
-const { currentWorkspace } = useSelector(
-  (state: RootState) => state.workspace
-);
+  const { currentWorkspace } = useSelector(
+    (state: RootState) => state.workspace
+  );
 
-const [users, setUsers] = useState<TeamMember[]>([]);
-const [searchTerm, setSearchTerm] = useState("");
+  const authUser = useSelector((state: RootState) => state.auth.user);
+
+  const [users, setUsers] = useState<TeamMember[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [tasks, setTasks] = useState<TeamTask[]>([]);
 
-const [tasks, setTasks] = useState<TeamTask[]>([]);
+  useEffect(() => {
+    if (!currentWorkspace) {
+      setUsers([]);
+      setTasks([]);
+      return;
+    }
 
-useEffect(() => {
-  if (!currentWorkspace) {
-    setUsers([]);
-    setTasks([]);
-    return;
-  }
-  // setUsers(currentWorkspace.members);
+    const allTasks: TeamTask[] =
+      currentWorkspace.projects?.flatMap((p) =>
+        (p.tasks || []).map((t: any) => ({
+          id: t.id,
+          title: t.title,
+          status: t.status,
+        }))
+      ) || [];
 
-  const allTasks: TeamTask[] =
-    currentWorkspace.projects?.flatMap((p) =>
-      (p.tasks || []).map((t: any) => ({
-        id: t.id,
-        title: t.title,
-        status: t.status,
-      }))
-    ) || [];
-
-  setTasks(allTasks);
-  setUsers(currentWorkspace.members ?? []);
-  
-}, [currentWorkspace]);
+    setTasks(allTasks);
+    setUsers(currentWorkspace.members ?? []);
+  }, [currentWorkspace]);
 
   const projects: Project[] = currentWorkspace?.projects || [];
 
+  const isAdmin = () => {
+    if (!currentWorkspace || !authUser) return false;
 
-const filteredUsers = users.filter(
-  (u) =>
-    `${u.user.first_name} ${u.user.last_name}`
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase()) ||
-    u.user.email.toLowerCase().includes(searchTerm.toLowerCase())
-);
+    const member = currentWorkspace.members.find(
+      (m) => m.user.id === authUser.id
+    );
 
+    return member?.role === "admin";
+  };
+
+  const filteredUsers = users.filter(
+    (u) =>
+      `${u.user.first_name} ${u.user.last_name}`
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      u.user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex justify-between items-start gap-6">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white mb-1">Team</h1>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white mb-1">
+            Team
+          </h1>
           <p className="text-gray-500 dark:text-zinc-400 text-sm">
             Manage team members and their contributions
           </p>
         </div>
-        <button
-          onClick={() => setIsDialogOpen(true)}
-          className="flex items-center px-5 py-2 rounded bg-gradient-to-br from-blue-500 to-blue-600 text-white text-sm hover:opacity-90 transition"
-        >
-          <UserPlus className="w-4 h-4 mr-2" /> Invite Member
-        </button>
-        <InviteMemberDialog isDialogOpen={isDialogOpen} setIsDialogOpen={setIsDialogOpen} />
+
+        {isAdmin() && (
+          <button
+            onClick={() => setIsDialogOpen(true)}
+            className="flex items-center px-5 py-2 rounded bg-gradient-to-br from-blue-500 to-blue-600 text-white text-sm hover:opacity-90 transition"
+          >
+            <UserPlus className="w-4 h-4 mr-2" /> Invite Member
+          </button>
+        )}
+
+        <InviteMemberDialog
+          isDialogOpen={isDialogOpen}
+          setIsDialogOpen={setIsDialogOpen}
+        />
       </div>
 
       {/* Stats Cards */}
       <div className="flex gap-4">
-        <Card icon={UsersIcon} label="Total Members" value={users.length} color="emerald" />
+        <Card
+          icon={UsersIcon}
+          label="Total Members"
+          value={users.length}
+          color="emerald"
+        />
         <Card
           icon={Activity}
           label="Active Projects"
-          value={projects.filter((p) => !["CANCELLED", "COMPLETED"].includes(p.status)).length}
+          value={
+            projects.filter(
+              (p) => !["CANCELLED", "COMPLETED"].includes(p.status)
+            ).length
+          }
           color="emerald"
         />
         <Card icon={Shield} label="Total Tasks" value={tasks.length} color="purple" />
@@ -146,7 +166,7 @@ const filteredUsers = users.filter(
                     </div>
 
                     <span className="text-sm text-zinc-800 dark:text-white truncate">
-                     {user.user.first_name} {user.user.last_name}
+                      {user.user.first_name} {user.user.last_name}
                     </span>
                   </td>
                   <td className="px-6 py-2.5 text-sm text-gray-500 dark:text-zinc-400">
@@ -155,12 +175,12 @@ const filteredUsers = users.filter(
                   <td className="px-6 py-2.5">
                     <span
                       className={`px-2 py-1 text-xs rounded-md ${
-                        user.role === "ADMIN"
+                        user.role === "admin"
                           ? "bg-purple-100 dark:bg-purple-500/20 text-purple-500 dark:text-purple-400"
                           : "bg-gray-200 dark:bg-zinc-700 text-gray-700 dark:text-zinc-300"
                       }`}
                     >
-                      {user.role || "User"}
+                      {user.role}
                     </span>
                   </td>
                 </tr>
@@ -172,19 +192,21 @@ const filteredUsers = users.filter(
     </div>
   );
 }
+
 const colorMap: any = {
   emerald: "bg-emerald-100 dark:bg-emerald-500/10 text-emerald-500",
   purple: "bg-purple-100 dark:bg-purple-500/10 text-purple-500",
 };
+
 // Card Component
 const Card = ({ icon: Icon, label, value, color }: any) => (
-  <div className={`flex-1 p-6 rounded-lg border border-gray-300 dark:border-zinc-800 dark:bg-gradient-to-br dark:from-zinc-800/70 dark:to-zinc-900/50`}>
+  <div className="flex-1 p-6 rounded-lg border border-gray-300 dark:border-zinc-800 dark:bg-gradient-to-br dark:from-zinc-800/70 dark:to-zinc-900/50">
     <div className="flex items-center justify-between gap-8">
       <div>
         <p className="text-sm text-gray-500 dark:text-zinc-400">{label}</p>
         <p className="text-xl font-bold text-gray-900 dark:text-white">{value}</p>
       </div>
-      
+
       {/* <div className={`p-3 rounded-xl bg-${color}-100 dark:bg-${color}-500/10`}> */}
       <div className={`p-3 rounded-xl ${colorMap[color]}`}>
         <Icon className={`w-4 h-4 text-${color}-500 dark:text-${color}-200`} />
@@ -200,10 +222,14 @@ const EmptyState = ({ users }: any) => (
       <UsersIcon className="w-12 h-12 text-gray-400 dark:text-zinc-500" />
     </div>
     <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-      {users.length === 0 ? "No team members yet" : "No members match your search"}
+      {users.length === 0
+        ? "No team members yet"
+        : "No members match your search"}
     </h3>
     <p className="text-gray-500 dark:text-zinc-400">
-      {users.length === 0 ? "Invite team members to start collaborating" : "Try adjusting your search term"}
+      {users.length === 0
+        ? "Invite team members to start collaborating"
+        : "Try adjusting your search term"}
     </p>
   </div>
 );

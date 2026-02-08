@@ -7,7 +7,7 @@ from rest_framework import status
 from .models import Task
 from .serializers import TaskSerializer
 from projects.models import Project
-from core.permissions import is_project_member, is_project_admin
+from .permissions import is_project_member, is_project_admin
 
 
 class TaskListView(APIView):
@@ -38,12 +38,14 @@ class TaskListView(APIView):
         return Response(serializer.data, status=201)
 
 
-
 class TaskDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
     def put(self, request, pk):
         task = get_object_or_404(Task, id=pk)
+
+        if not is_project_member(request.user, task.project):
+            return Response({"detail": "Forbidden"}, status=403)
 
         if (
             task.assignee != request.user
