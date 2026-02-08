@@ -1,10 +1,29 @@
 from rest_framework import serializers
+from django.contrib.auth import get_user_model
 from .models import Task
 from projects.models import ProjectMember
 
+User = get_user_model()
 
+class AssigneeSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ("id", "name")
+
+    def get_name(self, obj):
+        return obj.email   # or obj.username / first_name
 class TaskSerializer(serializers.ModelSerializer):
     project = serializers.PrimaryKeyRelatedField(read_only=True)
+    assignee = AssigneeSerializer(read_only=True)
+    assignee_id = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        source="assignee",
+        write_only=True,
+        required=False,
+        allow_null=True
+    )
 
     class Meta:
         model = Task

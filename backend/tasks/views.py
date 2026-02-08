@@ -7,9 +7,10 @@ from rest_framework import status
 from .models import Task
 from .serializers import TaskSerializer
 from projects.models import Project
-from .permissions import is_project_member, is_project_admin
-
-
+from projects.permissions import (
+    is_project_member,
+    is_project_admin
+)
 class TaskListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -33,45 +34,47 @@ class TaskListView(APIView):
             context={"project": project}
         )
         serializer.is_valid(raise_exception=True)
-        serializer.save(project=project)
+        serializer.save(project=project)  # ✅ FIXED
 
         return Response(serializer.data, status=201)
-
 
 class TaskDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
     def put(self, request, pk):
+        
         task = get_object_or_404(Task, id=pk)
 
+        # project members can update tasks
         if not is_project_member(request.user, task.project):
-            return Response({"detail": "Forbidden"}, status=403)
+            return Response(
+                {"detail": "Forbidden"},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
-        if (
-            task.assignee != request.user
-            and not is_project_admin(request.user, task.project)
-        ):
-            return Response({"detail": "Forbidden"}, status=403)
-
-        serializer = TaskSerializer(task, data=request.data, partial=True)
+        serializer = TaskSerializer(
+            task,
+            data=request.data,
+            partial=True
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request, pk):
         task = get_object_or_404(Task, id=pk)
 
+        #  admin can delete
         if not is_project_admin(request.user, task.project):
             return Response(
                 {"detail": "Only admin can delete task"},
-                status=403
+                status=status.HTTP_403_FORBIDDEN
             )
 
         task.delete()
-        return Response(status=204)
-
-
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
 class BulkDeleteTaskView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -90,9 +93,12 @@ class BulkDeleteTaskView(APIView):
             if not is_project_admin(request.user, task.project):
                 return Response(
                     {"detail": "Only admin can delete tasks"},
-                    status=403
+                    status=status.HTTP_403_FORBIDDEN
                 )
 
-        deleted, _ = tasks.delete()
+        deleted_count, _ = tasks.delete()
 
-        return Response({"deleted": deleted}, status=200)
+        return Response(
+            {"deleted": deleted_count},
+            status=status.HTTP_200_OK
+        )
