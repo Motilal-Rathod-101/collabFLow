@@ -19,8 +19,6 @@ import ProjectTasks from "../components/ProjectTasks";
 import type { RootState } from "../app/store";
 import type { Project } from "../features/workspaceSlice";
 import type { Task } from "../components/ProjectTasks";
-
-import type { Task as UITask } from "../components/ProjectTasks";
 import type { Task as WorkspaceTask } from "../features/workspaceSlice";
 
 export default function ProjectDetail() {
@@ -46,7 +44,7 @@ export default function ProjectDetail() {
     setActiveTab(tabFromUrl);
   }, [tabFromUrl]);
 
-  // find project + map tasks
+  // find project and map tasks
   useEffect(() => {
     if (!projectId || !currentWorkspace) return;
 
@@ -54,13 +52,15 @@ export default function ProjectDetail() {
     if (!found) return;
 
     setProject(found);
-    const mappedTasks: Task[] =
-      found.tasks?.map((task: any) => ({
-        ...task,
-        projectId: found.id,
-      })) ?? [];
 
-setTasks(mappedTasks);
+    const mappedTasks = found.tasks?.map((task: any) => ({
+      ...task,
+      project: found.id,     // for Redux
+      projectId: found.id,   //  for UI routing
+    })) ?? [];
+
+
+  setTasks(mappedTasks);
 
   }, [projectId, projects, currentWorkspace]);
 
@@ -89,6 +89,12 @@ setTasks(mappedTasks);
     COMPLETED: "bg-blue-200",
     CANCELLED: "bg-red-200",
   };
+
+  const calendarTasks: WorkspaceTask[] =
+  tasks.map((t) => ({
+    ...t,
+    project: t.projectId, 
+  })) as WorkspaceTask[];
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -157,14 +163,18 @@ setTasks(mappedTasks);
 
       {/* Content */}
       {activeTab === "tasks" && <ProjectTasks tasks={tasks} />}
-      {activeTab === "calendar" && <ProjectCalendar tasks={tasks} />}
+      {activeTab === "calendar" && (
+        <ProjectCalendar tasks={calendarTasks} />
+      )}
+
       {activeTab === "analytics" && (
         <ProjectAnalytics
-          tasks={tasks}
+          tasks={calendarTasks}
           project={project}
           membersCount={currentWorkspace.members.length}
         />
       )}
+
       {activeTab === "settings" && <ProjectSettings project={project} />}
 
       {/* Create Task */}

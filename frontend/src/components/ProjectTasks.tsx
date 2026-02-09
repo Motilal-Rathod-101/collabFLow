@@ -23,7 +23,7 @@ export interface TaskAssignee {
 }
 
 export interface Task {
-  id: number;
+  id: string;
   title: string;
   description?: string;
   status: "TODO" | "IN_PROGRESS" | "DONE";
@@ -62,16 +62,16 @@ const priorityTexts: Record<
     prioritycolor: "text-blue-600 dark:text-blue-400",
   },
   HIGH: {
-    background: "bg-emerald-100 dark:bg-emerald-950",
-    prioritycolor: "text-emerald-600 dark:text-emerald-400",
-  },
-};
+      background: "bg-emerald-100 dark:bg-emerald-950",
+      prioritycolor: "text-emerald-600 dark:text-emerald-400",
+    },
+  };
 
-// component
-const ProjectTasks = ({ tasks }: { tasks: Task[] }) => {
+  // component
+  const ProjectTasks = ({ tasks }: { tasks: Task[] }) => {
   const dispatch = useDispatch<any>();
   const navigate = useNavigate();
-  const [selectedTasks, setSelectedTasks] = useState<number[]>([]);
+  const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
 
   const [filters, setFilters] = useState({
     status: "",

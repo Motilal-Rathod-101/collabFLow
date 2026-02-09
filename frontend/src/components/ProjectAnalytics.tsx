@@ -17,7 +17,7 @@ import {
   ArrowRightIcon,
 } from "lucide-react";
 
-import type { Task, WorkspaceProject } from "../features/workspaceSlice";
+import type { Task, Project } from "../features/workspaceSlice";
 
 // types
 type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE";
@@ -25,12 +25,12 @@ type TaskType = "TASK" | "BUG" | "FEATURE" | "IMPROVEMENT" | "OTHER";
 type TaskPriority = "LOW" | "MEDIUM" | "HIGH";
 
 interface ProjectAnalyticsProps {
-  project: WorkspaceProject;
-   membersCount: number;
+  project: Project;
+  membersCount: number;
   tasks: Task[];
 }
 
-// constant
+// constants
 const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
 
 const PRIORITY_COLORS: Record<TaskPriority, string> = {
@@ -39,7 +39,11 @@ const PRIORITY_COLORS: Record<TaskPriority, string> = {
   HIGH: "text-emerald-600 bg-emerald-200 dark:text-emerald-500 dark:bg-emerald-600",
 };
 
-const ProjectAnalytics = ({ project, tasks,membersCount }: ProjectAnalyticsProps) => {
+const ProjectAnalytics = ({
+  project,
+  tasks,
+  membersCount,
+}: ProjectAnalyticsProps) => {
   const { stats, statusData, typeData, priorityData } = useMemo(() => {
     const now = new Date();
     const total = tasks.length;
@@ -259,3 +263,7 @@ const ProjectAnalytics = ({ project, tasks,membersCount }: ProjectAnalyticsProps
 };
 
 export default ProjectAnalytics;
+
+
+
+

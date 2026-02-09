@@ -76,6 +76,8 @@ const CreateProjectDialog = ({
     }));
   };
 
+  
+
   if (!isDialogOpen) return null;
 
   return (
@@ -198,21 +200,32 @@ const CreateProjectDialog = ({
           {/* Lead */}
           <div>
             <label className="block text-sm mb-1">Project Lead</label>
+          
             <select
-              value={formData.team_lead}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  team_lead: e.target.value,
-                  team_members: e.target.value
-                    ? [...new Set([...formData.team_members, e.target.value])]
-                    : formData.team_members,
-                })
-              }
-              className="w-full px-3 py-2 rounded cpd-input text-sm"
-            >
-              <option value="">No lead</option>
-            </select>
+            value={formData.team_lead}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                team_lead: e.target.value,
+                team_members: e.target.value
+                  ? [...new Set([...formData.team_members, e.target.value])]
+                  : formData.team_members,
+              })
+            }
+            className="w-full px-3 py-2 rounded cpd-input text-sm"
+          >
+            <option value="">No lead</option>
+
+            {currentWorkspace?.members?.map((member) => (
+              <option
+                key={member.user.email}
+                value={member.user.email}
+              >
+                {member.user.email}
+              </option>
+            ))}
+          </select>
+
           </div>
 
           {/* Team Members */}

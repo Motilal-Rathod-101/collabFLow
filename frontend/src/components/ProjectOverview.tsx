@@ -10,7 +10,7 @@ import { useAppDispatch } from "../app/hooks";
 import { fetchWorkspaces } from "../features/workspaceSlice";
 import { fetchProjects } from "../features/projectsSlice";
 
-/* ================= TYPES ================= */
+//types
 
 type ProjectStatus = "PLANNING" | "ACTIVE" | "COMPLETED" | "CANCELLED";
 type ProjectPriority = "LOW" | "MEDIUM" | "HIGH";
@@ -19,7 +19,6 @@ interface Props {
   openDialog: () => void;
 }
 
-/* ================= CONSTANTS ================= */
 
 const statusColors: Record<ProjectStatus, string> = {
   PLANNING: "bg-zinc-200 text-zinc-800 dark:bg-zinc-600 dark:text-zinc-200",
@@ -39,7 +38,6 @@ const priorityColors: Record<ProjectPriority, string> = {
     "border-green-300 text-green-700 dark:border-green-500 dark:text-green-400",
 };
 
-/* ================= COMPONENT ================= */
 
 export default function ProjectOverview({ openDialog }: Props) {
   const dispatch = useAppDispatch();

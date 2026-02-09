@@ -20,6 +20,7 @@ export interface Task {
   due_date?: string;
   assignee?: string;
   project: string;
+  projectId?: string;
 }
 
 export interface ProjectMember {
@@ -29,32 +30,22 @@ export interface ProjectMember {
   user: User;
 }
 
-// export interface Project {
-//   id: string;
-//   name: string;
-//   description?: string;
-//   status: "PLANNING" | "ACTIVE" | "ON_HOLD" | "COMPLETED";
-//   priority?: string;
-//   start_date?: string;
-//   end_date?: string;
-//   created_at: string;
-//   workspace: string;
-//   tasks: Task[];
-//   members: ProjectMember[];
-// }
+export type ProjectPriority = "LOW" | "MEDIUM" | "HIGH";
 
 export interface Project {
   id: string;
   name: string;
   description?: string;
   status: "PLANNING" | "ACTIVE" | "ON_HOLD" | "COMPLETED" | "CANCELLED";
-  priority?: string;
+  // priority?: string;
   start_date?: string;
   end_date?: string;
   created_at: string;
   workspace: string;
   tasks: Task[];
   members: ProjectMember[];
+  priority?: ProjectPriority;
+
 }
 
 

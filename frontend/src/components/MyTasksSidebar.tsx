@@ -8,34 +8,26 @@ import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import type { RootState } from "../app/store";
 
-// types
-
-export interface Task {
-  id: number;
-  title: string;
-  description?: string;
-  status: "TODO" | "IN_PROGRESS" | "DONE";
-  type?: string;
-  priority?: string;
-  due_date?: string;
-  assignee?: string;
-  project: string;
-  projectId?: string;
+export interface TaskAssignee {
+  id: string;
+  name: string;
 }
 
-
-// comp
+export interface Task {
+  id: string;
+  title: string;
+  status: "TODO" | "IN_PROGRESS" | "DONE";
+  due_date?: string;
+  assignee?: TaskAssignee | null;
+  projectId: string;
+}
 
 function MyTasksSidebar() {
-  
   const { currentWorkspace } = useSelector(
     (state: RootState) => state.workspace
   );
-  const user = currentWorkspace?.owner;
-//   const user = {
-//   id: "6512de66-50c4-420e-be72-38f5c595cac0",
-// }
 
+  const user = currentWorkspace?.owner;
 
   const [showMyTasks, setShowMyTasks] = useState(false);
   const [myTasks, setMyTasks] = useState<Task[]>([]);
@@ -55,16 +47,29 @@ function MyTasksSidebar() {
     }
   };
 
-
   const fetchUserTasks = () => {
-    if (!currentWorkspace || !user) return;
+    if (!currentWorkspace || !user) {
+      setMyTasks([]);
+      return;
+    }
 
-    const tasks = currentWorkspace.projects.flatMap((project) =>
+    const tasks: Task[] = currentWorkspace.projects.flatMap((project) =>
       (project.tasks ?? [])
-        .filter((task) => task?.assignee === user)
-        .map((task) => ({
-          ...task,
-          projectId: project.id, 
+        .filter((t: any) => {
+          if (!t.assignee) return false;
+          if (typeof t.assignee === "string") return t.assignee === user;
+          return t.assignee.id === user;
+        })
+        .map((t: any) => ({
+          id: String(t.id),
+          title: t.title,
+          status: t.status,
+          due_date: t.due_date,
+          projectId: project.id,
+          assignee:
+            typeof t.assignee === "string"
+              ? { id: t.assignee, name: "" }
+              : t.assignee,
         }))
     );
 
@@ -74,7 +79,6 @@ function MyTasksSidebar() {
   useEffect(() => {
     fetchUserTasks();
   }, [currentWorkspace, user]);
-// UI
 
   return (
     <div className="mt-6 px-3">
@@ -111,13 +115,13 @@ function MyTasksSidebar() {
                 <Link
                   key={task.id}
                   to={`/taskDetails?projectId=${task.projectId}&taskId=${task.id}`}
-                  className="w-full rounded-lg transition-all duration-200 text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white"
+                  className="block rounded-lg transition-all duration-200 text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white"
                 >
-                  <div className="flex items-center gap-2 px-3 py-2 w-full min-w-0">
+                  <div className="flex items-center gap-2 px-3 py-2 min-w-0">
                     <div
                       className={`w-2 h-2 rounded-full ${getTaskStatusColor(
                         task.status
-                      )} flex-shrink-0`}
+                      )}`}
                     />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium truncate">

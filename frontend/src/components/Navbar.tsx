@@ -60,7 +60,7 @@ const Navbar: React.FC<NavbarProps> = ({ setIsSidebarOpen }) => {
             className="size-7 rounded-full"
           /> */}
           <div className="size-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-semibold">
-            {user?.username?.charAt(0).toUpperCase() || "M"}
+            {/* {user?.username?.charAt(0).toUpperCase() || "M"} */}{"M"}
         </div>
 
 

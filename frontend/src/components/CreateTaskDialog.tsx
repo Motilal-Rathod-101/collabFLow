@@ -3,12 +3,10 @@ import { Calendar as CalendarIcon } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 import { format } from "date-fns";
 
-import { addTask,setProjectTasks } from "../features/workspaceSlice";
-import { createTaskApi } from "../api/tasks";
-import { getTasks } from "../api/tasks";
+import { setProjectTasks } from "../features/workspaceSlice";
+import { createTaskApi, getTasks } from "../api/tasks";
 
-
-// types
+//  TYPES 
 type TaskType = "BUG" | "FEATURE" | "TASK" | "IMPROVEMENT" | "OTHER";
 type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE";
 type TaskPriority = "LOW" | "MEDIUM" | "HIGH";
@@ -19,7 +17,8 @@ interface User {
 }
 
 interface Member {
-  user: User;
+  user: User | string; 
+  email?: string;
 }
 
 interface Project {
@@ -53,6 +52,7 @@ interface FormData {
   due_date: string;
 }
 
+// -------------------- COMPONENT --------------------
 export default function CreateTaskDialog({
   showCreateTask,
   setShowCreateTask,
@@ -61,14 +61,14 @@ export default function CreateTaskDialog({
   const dispatch = useDispatch();
 
   const currentWorkspace = useSelector(
-    (state: RootState) => state.workspace?.currentWorkspace || null
+    (state: RootState) => state.workspace?.currentWorkspace
   );
 
   const project = currentWorkspace?.projects.find(
     (p) => p.id === projectId
   );
 
-  const teamMembers = project?.members || [];
+  const teamMembers = project?.members ?? [];
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -82,31 +82,28 @@ export default function CreateTaskDialog({
     due_date: "",
   });
 
-  // submit
+  // -------------------- SUBMIT --------------------
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!projectId) return;
+    if (!projectId || isSubmitting) return;
 
     setIsSubmitting(true);
 
     try {
-      // API CALL
-      const task = await createTaskApi(projectId, {
-        title: formData.title,
-        description: formData.description,
+      await createTaskApi(projectId, {
+        title: formData.title.trim(),
+        description: formData.description.trim(),
         type: formData.type,
         status: formData.status,
         priority: formData.priority,
-        assignee: formData.assigneeId || null,
+        assignee_id: formData.assigneeId || null, 
         due_date: formData.due_date || null,
-        });
+      });
 
-      dispatch(addTask(task));
-    //   dispatch(fetchTasks(projectId));
-    const tasks = await getTasks(projectId);
-dispatch(setProjectTasks({ projectId, tasks }));
-      setShowCreateTask(false);
+      const tasks = await getTasks(projectId);
+      dispatch(setProjectTasks({ projectId, tasks }));
 
+      //  reset and close only after success
       setFormData({
         title: "",
         description: "",
@@ -116,8 +113,11 @@ dispatch(setProjectTasks({ projectId, tasks }));
         assigneeId: "",
         due_date: "",
       });
+
+      setShowCreateTask(false);
     } catch (error) {
       console.error("Task creation failed", error);
+      alert("Failed to create task");
     } finally {
       setIsSubmitting(false);
     }
@@ -125,12 +125,14 @@ dispatch(setProjectTasks({ projectId, tasks }));
 
   if (!showCreateTask) return null;
 
+  // -------------------- UI --------------------
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 dark:bg-black/60 backdrop-blur">
-      <div className="bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 rounded-lg shadow-lg w-full max-w-md p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur">
+      <div className="bg-white border rounded-lg shadow-lg w-full max-w-md p-6">
         <h2 className="text-xl font-bold mb-4">Create New Task</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Title */}
           <input
             value={formData.title}
             onChange={(e) =>
@@ -141,6 +143,7 @@ dispatch(setProjectTasks({ projectId, tasks }));
             required
           />
 
+          {/* Description */}
           <textarea
             value={formData.description}
             onChange={(e) =>
@@ -150,10 +153,14 @@ dispatch(setProjectTasks({ projectId, tasks }));
             className="w-full rounded border px-3 py-2 h-24"
           />
 
+          {/* Type */}
           <select
             value={formData.type}
             onChange={(e) =>
-              setFormData({ ...formData, type: e.target.value as TaskType })
+              setFormData({
+                ...formData,
+                type: e.target.value as TaskType,
+              })
             }
             className="w-full rounded border px-3 py-2"
           >
@@ -164,6 +171,7 @@ dispatch(setProjectTasks({ projectId, tasks }));
             <option value="OTHER">Other</option>
           </select>
 
+          {/* Assignee */}
           <select
             value={formData.assigneeId}
             onChange={(e) =>
@@ -172,20 +180,33 @@ dispatch(setProjectTasks({ projectId, tasks }));
             className="w-full rounded border px-3 py-2"
           >
             <option value="">Unassigned</option>
-            {teamMembers.map((m) => (
-              <option key={m.user.id} value={m.user.id}>
-                {m.user.email}
-              </option>
-            ))}
+            {teamMembers.map((m) => {
+              const userId =
+                typeof m.user === "string" ? m.user : m.user.id;
+              const email =
+                typeof m.user === "string"
+                  ? m.email
+                  : m.user.email;
+
+              return (
+                <option key={userId} value={userId}>
+                  {email}
+                </option>
+              );
+            })}
           </select>
 
+          {/* Due date */}
           <div className="flex items-center gap-2">
             <CalendarIcon className="size-5" />
             <input
               type="date"
               value={formData.due_date}
               onChange={(e) =>
-                setFormData({ ...formData, due_date: e.target.value })
+                setFormData({
+                  ...formData,
+                  due_date: e.target.value,
+                })
               }
               className="w-full rounded border px-3 py-2"
             />
@@ -197,6 +218,7 @@ dispatch(setProjectTasks({ projectId, tasks }));
             </p>
           )}
 
+          {/* Actions */}
           <div className="flex justify-end gap-2">
             <button
               type="button"

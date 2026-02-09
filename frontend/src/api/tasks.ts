@@ -12,13 +12,11 @@ export const createTaskApi = async (projectId: string,payload: any) => {
   return res.data;
 };
 
-// update
-export const updateTaskApi = (taskId: number, payload: any) => {
+export const updateTaskApi = (taskId: string, payload: any) => {
   return api.put(`/tasks/${taskId}/`, payload);
 };
 
 
-// delete
-export const deleteTasksApi = (taskIds: number[]) => {
+export const deleteTasksApi = (taskIds: string[]) => {
   return api.post(`/tasks/bulk-delete/`, { ids: taskIds });
 };
