@@ -1,16 +1,24 @@
 from rest_framework import serializers
 from .models import Comment
-from core.serializers import UserSerializer
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+
+class CommentUserSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ("id", "name")
+
+    def get_name(self, obj):
+        return obj.email
+
 
 class CommentSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
+    user = CommentUserSerializer(read_only=True)
 
     class Meta:
         model = Comment
-        fields = [
-            "id",
-            "content",
-            "created_at",
-            "task",
-            "user"
-        ]
+        fields = "__all__"

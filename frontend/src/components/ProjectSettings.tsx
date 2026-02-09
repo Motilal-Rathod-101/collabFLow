@@ -2,6 +2,7 @@ import { format } from "date-fns";
 import { Plus, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import AddProjectMember from "./AddProjectMember";
+import {Project} from "../features/workspaceSlice"
 
 
 //types
@@ -14,26 +15,6 @@ type ProjectStatus =
   | "CANCELLED";
 
 type ProjectPriority = "LOW" | "MEDIUM" | "HIGH";
-
-interface ProjectMember {
-  user: {
-    id: string;
-    email: string;
-  };
-}
-
-interface Project {
-  id: string;
-  name: string;
-  description?: string;
-  status: ProjectStatus;
-  priority: ProjectPriority;
-  start_date?: string | null;
-  end_date?: string | null;
-  progress?: number;
-  team_lead?: string;
-  members: ProjectMember[];
-}
 
 interface Props {
   project: Project;
@@ -63,14 +44,13 @@ export default function ProjectSettings({ project }: Props) {
       name: project.name,
       description: project.description ?? "",
       status: project.status,
-      priority: project.priority,
-      start_date: project.start_date
+      priority: project.priority ?? "MEDIUM",      start_date: project.start_date
         ? new Date(project.start_date)
         : null,
       end_date: project.end_date
         ? new Date(project.end_date)
         : null,
-      progress: project.progress ?? 0,
+      progress: project.progress ?? 0 ,
     });
   }, [project]);
 

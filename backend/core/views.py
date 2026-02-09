@@ -1,11 +1,10 @@
-from django.shortcuts import render
-
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from .serializers import SignupSerializer
-
+from rest_framework import status
 from django.http import HttpResponse
+
+from .serializers import SignupSerializer
 
 
 def home(request):
@@ -18,5 +17,8 @@ class SignupView(APIView):
     def post(self, request):
         serializer = SignupSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=201)
+        user = serializer.save()
+        return Response(
+            SignupSerializer(user).data,
+            status=status.HTTP_201_CREATED
+        )

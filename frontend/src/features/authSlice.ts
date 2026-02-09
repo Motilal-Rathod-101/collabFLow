@@ -15,9 +15,8 @@ interface AuthState {
   user: User | null;
   loading: boolean;
   isAuthenticated: boolean;
-}
+};
 
-// safe decode on app reload
 const getUserFromToken = (): User | null => {
   const token = localStorage.getItem("access");
   if (!token) return null;

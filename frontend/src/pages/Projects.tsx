@@ -7,7 +7,7 @@ import CreateProjectDialog from "../components/CreateProjectDialog";
 import EditProjectDialog from "../components/EditProjectDialog";
 
 import type { RootState } from "../app/store";
-import type { Project } from "../features/projectsSlice";
+import type { Project } from "../features/workspaceSlice";
 
 export default function Projects() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);

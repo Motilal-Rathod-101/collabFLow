@@ -14,7 +14,7 @@ const Dashboard = () => {
   const dispatch = useDispatch<AppDispatch>();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const { isAuthenticated } = useSelector(
+  const { isAuthenticated, user } = useSelector(
     (state: RootState) => state.auth
   );
 
@@ -34,6 +34,8 @@ const Dashboard = () => {
     return <div className="p-6 text-center">No workspace found</div>;
   }
 
+  const isOwner = user?.id === currentWorkspace.owner?.id;
+
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex justify-between items-center">
@@ -41,12 +43,14 @@ const Dashboard = () => {
           Workspace: {currentWorkspace.name}
         </h1>
 
-        <button
-          onClick={() => setIsDialogOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded"
-        >
-          <Plus size={16} /> New Project
-        </button>
+        {isOwner && (
+          <button
+            onClick={() => setIsDialogOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded"
+          >
+            <Plus size={16} /> New Project
+          </button>
+        )}
       </div>
 
       <StatsGrid />

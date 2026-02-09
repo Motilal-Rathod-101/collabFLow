@@ -10,6 +10,18 @@ export type ProjectStatus =
 
 export type ProjectPriority = "LOW" | "MEDIUM" | "HIGH";
 
+export interface ProjectMember {
+  id: string;
+  role: "admin" | "member";
+  user: {
+    id: string;
+    email: string;
+    first_name?: string;
+    last_name?: string;
+    image?: string;
+  };
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -21,6 +33,9 @@ export interface Project {
   created_at?: string;
   workspace: string;
   tasks?: any[];
+  team_lead?: string; 
+  progress?: number;
+
   members?: {
     id: string;
     user: {
@@ -32,8 +47,6 @@ export interface Project {
     };
     role: "admin" | "member";
   }[];
-  team_lead?: string;
-  progress?: number;
 }
 
 interface ProjectState {
@@ -49,8 +62,7 @@ const initialState: ProjectState = {
 export const fetchProjects = createAsyncThunk(
   "projects/fetchProjects",
   async () => {
-    const data = await getProjects();
-    return data as Project[];
+    return await getProjects();
   }
 );
 

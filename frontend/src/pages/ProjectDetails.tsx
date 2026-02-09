@@ -17,9 +17,8 @@ import ProjectCalendar from "../components/ProjectCalendar";
 import ProjectTasks from "../components/ProjectTasks";
 
 import type { RootState } from "../app/store";
-import type { Project } from "../features/workspaceSlice";
+import type { Project,Task as WorkspaceTask  } from "../features/workspaceSlice";
 import type { Task } from "../components/ProjectTasks";
-import type { Task as WorkspaceTask } from "../features/workspaceSlice";
 
 export default function ProjectDetail() {
   const navigate = useNavigate();

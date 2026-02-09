@@ -1,16 +1,16 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework import status
-from django.shortcuts import get_object_or_404
-
-from .models import Workspace, WorkspaceMember
-from .serializers import WorkspaceSerializer
-from .permissions import is_workspace_admin
-
-from django.core.mail import send_mail
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.mail import send_mail
+from django.shortcuts import get_object_or_404
+
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from .models import Workspace, WorkspaceMember
+from .permissions import is_workspace_admin
+from .serializers import WorkspaceSerializer
 
 User = get_user_model()
 
@@ -19,21 +19,23 @@ class WorkspaceListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        workspaces = Workspace.objects.filter(
-            members__user=request.user
-        )
+        workspaces = Workspace.objects.filter(members__user=request.user).distinct()
         return Response(WorkspaceSerializer(workspaces, many=True).data)
 
     def post(self, request):
+        name = request.data.get("name")
+        if not name:
+            return Response({"detail": "name is required"}, status=status.HTTP_400_BAD_REQUEST)
+
         workspace = Workspace.objects.create(
-            name=request.data["name"],
+            name=name,
             owner=request.user
         )
 
-        WorkspaceMember.objects.create(
+        WorkspaceMember.objects.get_or_create(
             workspace=workspace,
             user=request.user,
-            role="admin"
+            defaults={"role": "admin"}
         )
 
         return Response(
@@ -74,13 +76,27 @@ class AddWorkspaceMemberView(APIView):
         if role not in ["admin", "member"]:
             role = "member"
 
+        user_id = request.data.get("user")
+        email = request.data.get("email")
+
+        user = None
+        if user_id:
+            user = get_object_or_404(User, id=user_id)
+        elif email:
+            user = get_object_or_404(User, email=email)
+        else:
+            return Response(
+                {"detail": "user or email is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         WorkspaceMember.objects.get_or_create(
             workspace=workspace,
-            user_id=request.data["user"],
+            user=user,
             defaults={"role": role}
         )
 
-        return Response({"message": "Member added"}, status=200)
+        return Response({"message": "Member added"}, status=status.HTTP_200_OK)
 
 
 class InviteWorkspaceMemberView(APIView):
@@ -92,7 +108,7 @@ class InviteWorkspaceMemberView(APIView):
         if not is_workspace_admin(request.user, workspace):
             return Response(
                 {"detail": "Only admin can invite members"},
-                status=403
+                status=status.HTTP_403_FORBIDDEN
             )
 
         email = request.data.get("email")
@@ -102,7 +118,7 @@ class InviteWorkspaceMemberView(APIView):
             role = "member"
 
         if not email:
-            return Response({"detail": "Email is required"}, status=400)
+            return Response({"detail": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             user = User.objects.get(email=email)
@@ -121,7 +137,7 @@ class InviteWorkspaceMemberView(APIView):
                 fail_silently=False,
             )
 
-            return Response({"message": "User added & email sent"})
+            return Response({"message": "User added & email sent"}, status=status.HTTP_200_OK)
 
         except User.DoesNotExist:
             send_mail(
@@ -132,4 +148,4 @@ class InviteWorkspaceMemberView(APIView):
                 fail_silently=False,
             )
 
-            return Response({"message": "Invitation email sent"})
+            return Response({"message": "Invitation email sent"}, status=status.HTTP_200_OK)

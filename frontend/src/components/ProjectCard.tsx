@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
-import type { Project } from "../features/projectsSlice";
+// import type { Project } from "../features/projectsSlice";
 import { deleteProject } from "../api/projects";
-import { useDispatch } from "react-redux";
-import { removeProject } from "../features/workspaceSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { removeProject,Project} from "../features/workspaceSlice";
+import type { RootState } from "../app/store";
 
 const ProjectCard = ({
   project,
@@ -20,6 +21,12 @@ const ProjectCard = ({
     totalTasks === 0 ? 0 : Math.round((doneTasks / totalTasks) * 100);
 
   const dispatch = useDispatch();
+  const { user } = useSelector((state: RootState) => state.auth);
+
+  // check if current user is project admin (owner)
+  const isProjectOwner = project.members?.some(
+    (m) => m.user.id === user?.id && m.role === "admin"
+  );
 
   const handleDelete = async (
     e: React.MouseEvent<HTMLButtonElement>
@@ -43,21 +50,25 @@ const ProjectCard = ({
   return (
     <div className="relative bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700 rounded-lg p-5 transition-all duration-200 group">
       
-      {/* Delete Button */}
-      <button 
-        onClick={handleDelete}
-        className="absolute top-3 right-1 text-xs text-black-500 hover:text-black-600 border-gray-200 text-black-600 bg-blue-600 rounded  px-2 py-1 text-white"
-      >
-        Delete
-      </button>
+      {/* Delete Button – owner only */}
+      {isProjectOwner && (
+        <button 
+          onClick={handleDelete}
+          className="absolute top-3 right-1 text-xs text-black-500 hover:text-black-600 border-gray-200 text-black-600 bg-blue-600 rounded px-2 py-1 text-white"
+        >
+          Delete
+        </button>
+      )}
 
-      {/* Edit Button */}
-      <button
-        onClick={handleEdit}
-        className="absolute  top-3 right-16 text-xs text-black-600 bg-blue-600 rounded px-2 py-1 items-center flex text-white gap-2 hover:text-black-700 border border-gray-500"
-      >
-        Edit
-      </button>
+      {/* Edit Button – owner only */}
+      {isProjectOwner && (
+        <button
+          onClick={handleEdit}
+          className="absolute top-3 right-16 text-xs text-black-600 bg-blue-600 rounded px-2 py-1 items-center flex text-white gap-2 hover:text-black-700 border border-gray-500"
+        >
+          Edit
+        </button>
+      )}
 
       <Link to={`/projectsDetail?id=${project.id}&tab=tasks`}>
         {/* Header */}

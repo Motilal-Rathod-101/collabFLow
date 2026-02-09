@@ -1,24 +1,29 @@
 import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { getWorkspaces } from "../api/workspaces";
 
-// types
 export interface User {
   id: string;
-  username: string;
-  first_name: string;
-  last_name: string;
+  username?: string;
   email: string;
+  first_name?: string;
+  last_name?: string;
   image?: string;
 }
 
+export interface TaskAssignee {
+  id: string;
+  name: string;
+  email?: string; 
+}
+
 export interface Task {
-  id: number;
+  id: string;
   title: string;
   status: "TODO" | "IN_PROGRESS" | "DONE";
   type?: string;
   priority?: string;
   due_date?: string;
-  assignee?: string;
+  assignee?: TaskAssignee | null;
   project: string;
   projectId?: string;
 }
@@ -37,17 +42,17 @@ export interface Project {
   name: string;
   description?: string;
   status: "PLANNING" | "ACTIVE" | "ON_HOLD" | "COMPLETED" | "CANCELLED";
-  // priority?: string;
   start_date?: string;
   end_date?: string;
   created_at: string;
   workspace: string;
+  progress?: number;
   tasks: Task[];
   members: ProjectMember[];
   priority?: ProjectPriority;
+  team_lead?: string;
 
 }
-
 
 export interface WorkspaceMember {
   id: string;
@@ -59,7 +64,7 @@ export interface Workspace {
   id: string;
   name: string;
   created_at: string;
-  owner: string;
+  owner: User;
   members: WorkspaceMember[];
   projects: Project[];
 }
@@ -89,8 +94,9 @@ const workspaceSlice = createSlice({
 
   reducers: {
     setCurrentWorkspace(state, action: PayloadAction<string>) {
-      const found =
-        state.workspaces.find((w) => w.id === action.payload) || null;
+      const found = state.workspaces.find(
+        (w) => w.id === action.payload
+      ) || null;
 
       state.currentWorkspace = found;
 
@@ -129,13 +135,12 @@ const workspaceSlice = createSlice({
 
     removeProject(state, action: PayloadAction<string>) {
       if (!state.currentWorkspace) return;
-      state.currentWorkspace.projects =
-        state.currentWorkspace.projects.filter(
-          (p) => p.id !== action.payload
-        );
+      state.currentWorkspace.projects = state.currentWorkspace.projects.filter(
+        (p) => p.id !== action.payload
+      );
     },
 
-    updateProject(state, action: PayloadAction<any>) {
+    updateProject(state, action: PayloadAction<Project>) {
       if (!state.currentWorkspace) return;
 
       const index = state.currentWorkspace.projects.findIndex(
@@ -143,14 +148,11 @@ const workspaceSlice = createSlice({
       );
 
       if (index !== -1) {
-        state.currentWorkspace.projects[index] = {
-          ...state.currentWorkspace.projects[index],
-          ...action.payload,
-        };
+        state.currentWorkspace.projects[index] = action.payload;
       }
     },
 
-    deleteTask(state, action: PayloadAction<number[]>) {
+    deleteTask(state, action: PayloadAction<string[]>) {
       if (!state.currentWorkspace) return;
 
       state.currentWorkspace.projects.forEach((project) => {
@@ -159,39 +161,34 @@ const workspaceSlice = createSlice({
         );
       });
     },
+      updateTask(state, action: PayloadAction<any>) {
+        if (!state.currentWorkspace) return;
 
-    updateTask(state, action: PayloadAction<Task>) {
-      if (!state.currentWorkspace) return;
+        const projectId =
+          action.payload.project || action.payload.projectId;
 
-      const project = state.currentWorkspace.projects.find(
-        (p) => p.id === action.payload.project
-      );
+        const project = state.currentWorkspace.projects.find(
+          (p) => p.id === projectId
+        );
 
-      if (!project) return;
+        if (!project || !project.tasks) return;
 
-      const index = project.tasks.findIndex(
-        (t) => t.id === action.payload.id
-      );
+        const index = project.tasks.findIndex(
+          (t) => String(t.id) === String(action.payload.id)
+        );
 
-      if (index !== -1) {
-        project.tasks[index] = action.payload;
-      }
-    },
+        if (index !== -1) {
+          project.tasks[index] = {
+            ...project.tasks[index],
+            ...action.payload,
+          };
+        }
+      },
 
-    addTask(state, action: PayloadAction<any>) {
-      if (!state.currentWorkspace) return;
-
-      const project = state.currentWorkspace.projects.find(
-        (p) => p.id === action.payload.projectId
-      );
-
-      if (!project) return;
-
-      project.tasks = project.tasks ?? [];
-      project.tasks.push(action.payload);
-    },
-
-    setProjectTasks(state, action: PayloadAction<{ projectId: string; tasks: Task[] }>) {
+    setProjectTasks(
+      state,
+      action: PayloadAction<{ projectId: string; tasks: Task[] }>
+    ) {
       const { projectId, tasks } = action.payload;
 
       const project = state.currentWorkspace?.projects.find(
@@ -228,14 +225,13 @@ const workspaceSlice = createSlice({
 
 export const {
   setCurrentWorkspace,
-  addProject,
   addWorkspace,
   removeWorkspace,
+  addProject,
   removeProject,
   updateProject,
   deleteTask,
   updateTask,
-  addTask,
   setProjectTasks,
 } = workspaceSlice.actions;
 

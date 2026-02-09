@@ -8,17 +8,15 @@ import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import type { RootState } from "../app/store";
 
-export interface TaskAssignee {
-  id: string;
-  name: string;
-}
-
-export interface Task {
+interface Task {
   id: string;
   title: string;
   status: "TODO" | "IN_PROGRESS" | "DONE";
   due_date?: string;
-  assignee?: TaskAssignee | null;
+  assignee?: {
+    id: string;
+    name?: string;
+  } | null;
   projectId: string;
 }
 
@@ -27,7 +25,7 @@ function MyTasksSidebar() {
     (state: RootState) => state.workspace
   );
 
-  const user = currentWorkspace?.owner;
+  const authUser = useSelector((state: RootState) => state.auth.user);
 
   const [showMyTasks, setShowMyTasks] = useState(false);
   const [myTasks, setMyTasks] = useState<Task[]>([]);
@@ -47,8 +45,8 @@ function MyTasksSidebar() {
     }
   };
 
-  const fetchUserTasks = () => {
-    if (!currentWorkspace || !user) {
+  useEffect(() => {
+    if (!currentWorkspace || !authUser) {
       setMyTasks([]);
       return;
     }
@@ -57,8 +55,7 @@ function MyTasksSidebar() {
       (project.tasks ?? [])
         .filter((t: any) => {
           if (!t.assignee) return false;
-          if (typeof t.assignee === "string") return t.assignee === user;
-          return t.assignee.id === user;
+          return t.assignee.id === authUser.id;
         })
         .map((t: any) => ({
           id: String(t.id),
@@ -66,19 +63,12 @@ function MyTasksSidebar() {
           status: t.status,
           due_date: t.due_date,
           projectId: project.id,
-          assignee:
-            typeof t.assignee === "string"
-              ? { id: t.assignee, name: "" }
-              : t.assignee,
+          assignee: t.assignee,
         }))
     );
 
     setMyTasks(tasks);
-  };
-
-  useEffect(() => {
-    fetchUserTasks();
-  }, [currentWorkspace, user]);
+  }, [currentWorkspace, authUser]);
 
   return (
     <div className="mt-6 px-3">

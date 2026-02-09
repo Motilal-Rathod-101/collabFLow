@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import toast from "react-hot-toast";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { deleteTask, updateTask } from "../features/workspaceSlice";
@@ -15,6 +15,7 @@ import {
   XIcon,
   Zap,
 } from "lucide-react";
+import type { RootState } from "../app/store";
 
 export interface TaskAssignee {
   id: string;
@@ -34,13 +35,10 @@ export interface Task {
   projectId: string;
 }
 
-
-// types
 type TaskType = "BUG" | "FEATURE" | "TASK" | "IMPROVEMENT" | "OTHER";
 type TaskPriority = "LOW" | "MEDIUM" | "HIGH";
 type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE";
 
-// constants
 const typeIcons: Record<TaskType, { icon: any; color: string }> = {
   BUG: { icon: Bug, color: "text-red-600 dark:text-red-400" },
   FEATURE: { icon: Zap, color: "text-blue-600 dark:text-blue-400" },
@@ -62,17 +60,21 @@ const priorityTexts: Record<
     prioritycolor: "text-blue-600 dark:text-blue-400",
   },
   HIGH: {
-      background: "bg-emerald-100 dark:bg-emerald-950",
-      prioritycolor: "text-emerald-600 dark:text-emerald-400",
-    },
-  };
+    background: "bg-emerald-100 dark:bg-emerald-950",
+    prioritycolor: "text-emerald-600 dark:text-emerald-400",
+  },
+};
 
-  // component
-  const ProjectTasks = ({ tasks }: { tasks: Task[] }) => {
+const ProjectTasks = ({ tasks }: { tasks: Task[] }) => {
   const dispatch = useDispatch<any>();
   const navigate = useNavigate();
-  const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
 
+  const { user } = useSelector((state: RootState) => state.auth);
+  const { currentWorkspace } = useSelector(
+    (state: RootState) => state.workspace
+  );
+
+  const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
   const [filters, setFilters] = useState({
     status: "",
     type: "",
@@ -105,41 +107,46 @@ const priorityTexts: Record<
     setFilters((prev) => ({ ...prev, [name]: value }));
   };
 
-  //  UPDATE TASK 
+  const isProjectAdmin = (projectId: string) => {
+    const project = currentWorkspace?.projects.find(
+      (p) => p.id === projectId
+    );
+    return project?.members?.some(
+      (m: any) => m.user.id === user?.id && m.role === "admin"
+    );
+  };
+
+  const canUpdateTask = (task: Task) => {
+    if (task.assignee?.id === user?.id) return true;
+    if (isProjectAdmin(task.projectId)) return true;
+    return false;
+  };
+
   const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
     try {
       toast.loading("Updating status...");
-
       const res = await updateTaskApi(taskId, { status: newStatus });
-
       dispatch(updateTask(res.data));
-
       toast.dismiss();
       toast.success("Task status updated successfully");
-    } catch (error) {
+    } catch {
       toast.dismiss();
       toast.error("Failed to update task");
     }
   };
 
-  // delete task
   const handleDelete = async () => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete the selected tasks?"
-    );
-    if (!confirmDelete) return;
+    if (!window.confirm("Are you sure you want to delete the selected tasks?"))
+      return;
 
     try {
       toast.loading("Deleting tasks...");
-
       await deleteTasksApi(selectedTasks);
-
       dispatch(deleteTask(selectedTasks));
       setSelectedTasks([]);
-
       toast.dismiss();
       toast.success("Tasks deleted successfully");
-    } catch (error) {
+    } catch {
       toast.dismiss();
       toast.error("Failed to delete tasks");
     }
@@ -155,7 +162,6 @@ const priorityTexts: Record<
 
   return (
     <div>
-      {/* Filters */}
       <div className="flex flex-wrap gap-4 mb-4">
         {["status", "type", "priority", "assignee"].map((name) => {
           const options: Record<string, { label: string; value: string }[]> = {
@@ -201,26 +207,6 @@ const priorityTexts: Record<
           );
         })}
 
-        {(filters.status ||
-          filters.type ||
-          filters.priority ||
-          filters.assignee) && (
-          <button
-            type="button"
-            onClick={() =>
-              setFilters({
-                status: "",
-                type: "",
-                priority: "",
-                assignee: "",
-              })
-            }
-            className="px-3 py-1 flex items-center gap-2 rounded bg-gradient-to-br from-purple-400 to-purple-500 text-zinc-100 dark:text-zinc-200 text-sm transition-colors"
-          >
-            <XIcon className="size-3" /> Reset
-          </button>
-        )}
-
         {selectedTasks.length > 0 && (
           <button
             type="button"
@@ -232,7 +218,6 @@ const priorityTexts: Record<
         )}
       </div>
 
-      {/* Table */}
       <div className="overflow-auto rounded-lg lg:border border-zinc-300 dark:border-zinc-800">
         <div className="hidden lg:block overflow-x-auto">
           <table className="min-w-full text-sm text-left not-dark:bg-white text-zinc-900 dark:text-zinc-300">
@@ -321,6 +306,7 @@ const priorityTexts: Record<
                     >
                       <select
                         value={task.status}
+                        disabled={!canUpdateTask(task)}
                         onChange={(e) =>
                           handleStatusChange(
                             task.id,
@@ -337,10 +323,6 @@ const priorityTexts: Record<
 
                     <td className="px-4 py-2">
                       <div className="flex items-center gap-2">
-                        {/* <img
-                          src={task.assignee?.image || undefined}
-                          className="size-5 rounded-full"
-                        /> */}
                         {task.assignee?.name || "-"}
                       </div>
                     </td>
