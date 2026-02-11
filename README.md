@@ -1,82 +1,112 @@
-# 🚀 CollabFlow – Project & Task Management System
 
-CollabFlow is a full-stack project and task management system inspired by tools like Jira and ClickUp.  
-It allows teams to manage **workspaces, projects, tasks, and comments** in a structured way.
+CollabFlow – Project & Task Management System
 
-This project is built using **Django REST Framework (Backend)** and **React + Redux Toolkit (Frontend)**.
+CollabFlow is a full-stack Project & Task Management System inspired by tools like Jira and ClickUp.
 
----
+It allows teams to manage:
 
-## Tech Stack
+ Workspaces
+ Projects
+ Tasks (Status, Priority, Assignee)
+ Comments
+`Team Members with Role-based Access
 
-### Backend
-- Django
-- Django REST Framework
-- PostgreSQL
-- JWT Authentication (planned)
+Built using Django REST Framework (Backend) and React + Redux Toolkit (Frontend) with PostgreSQL as the database.
 
-### Frontend
-- React (Vite)
-- Redux Toolkit
-- TypeScript
-- Tailwind CSS
-- Axios
+- Tech Stack
+🔹 Backend
 
----
+Django
+Django REST Framework
+PostgreSQL
+JWT Authentication (SimpleJWT)
+Gunicorn (Production)
 
-## Features
+🔹 Frontend
 
-- Workspaces management
-- Projects under workspaces
-- Task management (status, priority, assignee)
-- Sidebar workspace & project navigation
-- Project dashboard & task overview
-- PostgreSQL seeded data
-- API-driven architecture
+React (Vite)
+Redux Toolkit
+TypeScript
+Tailwind CSS
+Axios
 
----
+✨ Features
 
-## 🛠 Installation & Run Instructions
+Workspace Management
+Project Creation & Configuration
+Task Management (TODO / IN_PROGRESS / DONE)
+Task Assignment
+Role-based Authorization (Admin / Member)
+Project Dashboard & Analytics
+Team Management
+Comment System
+Seed Script for Demo Data
+Fully API-driven Architecture
 
-Follow the steps below to run the project locally.
 
----
-
-###  Clone the Repository
-```bash
+🛠 Local Setup Guide
+1️ Clone Repository
 git clone https://github.com/Motilal-Rathod-101/collabFLow.git
-cd collabflow
+cd collabFLow
 
-## Backend Setup
-
+- Backend Setup (Django)
 cd backend
+
 python -m venv venv
-venv\Scripts\activate
+venv\Scripts\activate        # Windows
+# source venv/bin/activate   # Mac/Linux
+
 pip install -r requirements.txt
+
 python manage.py migrate
-python manage.py seed
+python manage.py seed        # Optional: Load demo data
 python manage.py runserver
 
-Backend runs on:
+Backend URL:
 http://127.0.0.1:8000/
 
-
-Frontend Setup:
+-Frontend Setup (React + Vite)
 cd frontend
+
 npm install
 npm run dev
 
-Frontend runs on:
+Frontend URL:
 http://localhost:5173/
 
-API Endpoints:
-GET /api/workspaces/
-GET /api/projects/
-GET /api/tasks/
-GET /api/comments/
+- Authentication
 
-Notes:
-PostgreSQL is used as database
-Data is seeded using seed script
-Frontend fetches data using REST APIs
-Authentication will be added later
+JWT based authentication
+
+Access Token & Refresh Token
+
+Role-based project & task permissions
+
+Protected API routes
+
+📡 API Endpoints (Sample)
+Workspaces
+GET    /api/workspaces/
+POST   /api/workspaces/
+
+Projects
+GET    /api/projects/
+POST   /api/projects/
+PUT    /api/projects/:id/
+DELETE /api/projects/:id/
+
+Tasks
+GET    /api/tasks/:project_id/
+POST   /api/tasks/:project_id/
+PUT    /api/tasks/:task_id/
+DELETE /api/tasks/:task_id/
+
+Comments
+GET    /api/comments/:task_id/
+POST   /api/comments/
+
+🗄 Database
+PostgreSQL
+
+Seed data available via:
+python manage.py seed
