@@ -168,10 +168,12 @@ const workspaceSlice = createSlice({
           action.payload.project || action.payload.projectId;
 
         const project = state.currentWorkspace.projects.find(
-          (p) => p.id === projectId
+          (p) => String(p.id) === String(projectId)
         );
 
-        if (!project || !project.tasks) return;
+        if (!project) return;
+
+        if (!project.tasks) project.tasks = [];
 
         const index = project.tasks.findIndex(
           (t) => String(t.id) === String(action.payload.id)

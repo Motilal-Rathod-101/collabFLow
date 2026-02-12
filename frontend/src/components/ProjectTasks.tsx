@@ -125,8 +125,9 @@ const ProjectTasks = ({ tasks }: { tasks: Task[] }) => {
   const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
     try {
       toast.loading("Updating status...");
-      const res = await updateTaskApi(taskId, { status: newStatus });
-      dispatch(updateTask(res.data));
+      const updatedTask = await updateTaskApi(taskId, { status: newStatus });
+      dispatch(updateTask(updatedTask));
+
       toast.dismiss();
       toast.success("Task status updated successfully");
     } catch {

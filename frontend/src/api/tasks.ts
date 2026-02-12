@@ -12,9 +12,12 @@ export const createTaskApi = async (projectId: string,payload: any) => {
   return res.data;
 };
 
-export const updateTaskApi = (taskId: string, payload: any) => {
-  return api.put(`/tasks/${taskId}/`, payload);
+export const updateTaskApi = async (taskId: string, payload: any) => {
+  const res = await api.put(`/tasks/${taskId}/`, payload);
+  return res.data;
 };
+
+
 
 
 export const deleteTasksApi = (taskIds: string[]) => {

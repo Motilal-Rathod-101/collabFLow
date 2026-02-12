@@ -40,10 +40,16 @@ class TaskSerializer(serializers.ModelSerializer):
     def validate(self, data):
         assignee = data.get("assignee")
 
-        project = (
-            self.context.get("project")
-            or (self.instance.project if self.instance else None)
-        )
+        # project = (
+        #     self.context.get("project")
+        #     or (self.instance.project if self.instance else None)
+        # )
+
+        if self.instance:
+            project = self.instance.project
+        else:
+            project = self.context.get("project")
+
 
         if assignee and project:
             is_member = ProjectMember.objects.filter(

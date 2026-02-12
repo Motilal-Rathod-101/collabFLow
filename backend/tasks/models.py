@@ -1,9 +1,10 @@
 from django.db import models
 from django.conf import settings
 from projects.models import Project
-
+import uuid
 
 class Task(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     STATUS_CHOICES = [
         ('TODO', 'TODO'),
         ('IN_PROGRESS', 'IN_PROGRESS'),
