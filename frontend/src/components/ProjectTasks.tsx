@@ -47,10 +47,8 @@ const typeIcons: Record<TaskType, { icon: any; color: string }> = {
   OTHER: { icon: MessageSquare, color: "text-amber-600 dark:text-amber-400" },
 };
 
-const priorityTexts: Record<
-  TaskPriority,
-  { background: string; prioritycolor: string }
-> = {
+const priorityTexts: Record<TaskPriority,{ background: string; prioritycolor: string }> = {
+
   LOW: {
     background: "bg-red-100 dark:bg-red-950",
     prioritycolor: "text-red-600 dark:text-red-400",
@@ -69,7 +67,9 @@ const ProjectTasks = ({ tasks }: { tasks: Task[] }) => {
   const dispatch = useDispatch<any>();
   const navigate = useNavigate();
 
+  // permission checking
   const { user } = useSelector((state: RootState) => state.auth);
+  // project members
   const { currentWorkspace } = useSelector(
     (state: RootState) => state.workspace
   );
@@ -82,8 +82,7 @@ const ProjectTasks = ({ tasks }: { tasks: Task[] }) => {
     assignee: "",
   });
 
-  const assigneeList = useMemo(
-    () =>
+  const assigneeList = useMemo(() =>
       Array.from(
         new Set(tasks.map((t) => t.assignee?.name).filter(Boolean))
       ) as string[],

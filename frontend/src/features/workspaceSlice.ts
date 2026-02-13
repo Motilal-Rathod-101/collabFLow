@@ -187,10 +187,7 @@ const workspaceSlice = createSlice({
         }
       },
 
-    setProjectTasks(
-      state,
-      action: PayloadAction<{ projectId: string; tasks: Task[] }>
-    ) {
+    setProjectTasks(state,action: PayloadAction<{ projectId: string; tasks: Task[] }>) {
       const { projectId, tasks } = action.payload;
 
       const project = state.currentWorkspace?.projects.find(

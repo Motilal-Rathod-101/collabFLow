@@ -10,6 +10,7 @@ import RecentActivity from "../components/RecentActivity";
 import TasksSummary from "../components/TasksSummary";
 import CreateProjectDialog from "../components/CreateProjectDialog";
 
+
 const Dashboard = () => {
   const dispatch = useDispatch<AppDispatch>();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
