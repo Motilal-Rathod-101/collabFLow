@@ -9,6 +9,7 @@ const Sidebar = () => {
     { name: 'Dashboard', href: '/', icon: LayoutDashboardIcon },
     { name: 'Projects', href: '/projects', icon: FolderOpenIcon },
     { name: 'Team', href: '/team', icon: UsersIcon },
+    
   ]
 
   return (
@@ -35,11 +36,20 @@ const Sidebar = () => {
                 <p className="text-sm truncate">{item.name}</p>
               </NavLink>
             ))}
-
-            <button className="flex w-full items-center gap-3 py-2 px-4 text-gray-800 dark:text-zinc-100 cursor-pointer rounded hover:bg-gray-50 dark:hover:bg-zinc-800/60 transition-all">
+            <NavLink
+              to="/settings"
+              className={({ isActive }) =>
+                `flex items-center gap-3 py-2 px-4 text-gray-800 dark:text-zinc-100 cursor-pointer rounded transition-all ${
+                  isActive
+                    ? 'bg-gray-100 dark:bg-zinc-900 dark:bg-gradient-to-br dark:from-zinc-800 dark:to-zinc-800/50'
+                    : 'hover:bg-gray-50 dark:hover:bg-zinc-800/60'
+                }`
+              }
+            >
               <SettingsIcon size={16} />
               <p className="text-sm truncate">Settings</p>
-            </button>
+            </NavLink>
+
           </div>
 
           <MyTasksSidebar />

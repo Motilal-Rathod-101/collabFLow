@@ -189,12 +189,15 @@ export default function Team() {
                 >
                   <td className="px-6 py-2.5 flex items-center gap-3">
                     <div className="w-6 h-6 rounded bg-blue-600 text-white flex items-center justify-center text-xs font-semibold">
-                      {user.user.first_name[0]}
+                      {  user.user.first_name[0] ||user.user.email[0].toLocaleUpperCase()}
                     </div>
 
                     <span className="text-sm text-zinc-800 dark:text-white truncate">
-                      {user.user.first_name} {user.user.last_name}
-                    </span>
+                    {user.user.first_name || user.user.last_name
+                      ? `${user.user.first_name} ${user.user.last_name}`
+                      : user.user.username || user.user.email.split("@")[0]}
+                  </span>
+
                   </td>
                   <td className="px-6 py-2.5 text-sm text-gray-500 dark:text-zinc-400">
                     {user.user.email}

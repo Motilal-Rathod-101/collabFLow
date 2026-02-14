@@ -1,228 +1,177 @@
-import { format } from "date-fns";
-import { Plus, Save } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Plus } from "lucide-react";
+import { useState } from "react";
 import AddProjectMember from "./AddProjectMember";
-import {Project} from "../features/workspaceSlice"
-
-
-//types
-
-type ProjectStatus =
-  | "PLANNING"
-  | "ACTIVE"
-  | "ON_HOLD"
-  | "COMPLETED"
-  | "CANCELLED";
-
-type ProjectPriority = "LOW" | "MEDIUM" | "HIGH";
+import EditProjectDialog from "./EditProjectDialog";
+import { Project } from "../features/workspaceSlice";
+import { useSelector } from "react-redux";
+import type { RootState } from "../app/store";
 
 interface Props {
   project: Project;
 }
 
-//comp
-
 export default function ProjectSettings({ project }: Props) {
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    status: "PLANNING" as ProjectStatus,
-    priority: "MEDIUM" as ProjectPriority,
-    start_date: null as Date | null,
-    end_date: null as Date | null,
-    progress: 0,
-  });
-
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
- 
-  useEffect(() => {
-    if (!project) return;
+  const currentUser = useSelector(
+    (state: RootState) => state.auth.user
+  );
 
-    setFormData({
-      name: project.name,
-      description: project.description ?? "",
-      status: project.status,
-      priority: project.priority ?? "MEDIUM",      start_date: project.start_date
-        ? new Date(project.start_date)
-        : null,
-      end_date: project.end_date
-        ? new Date(project.end_date)
-        : null,
-      progress: project.progress ?? 0 ,
-    });
-  }, [project]);
+  // find admin / owner
+  const projectOwner =
+    project.members?.find((m) => m.role === "admin")?.user;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+  // check owner
+  const isProjectOwner =
+    currentUser && projectOwner
+      ? currentUser.id === projectOwner.id
+      : false;
 
-    try {
-      // API call later
-    } finally {
-      setIsSubmitting(false);
-    }
+  // open edit dialog
+  const handleEdit = () => {
+    setIsEditOpen(true);
   };
 
+  // progress tracking from tasks
+  const tasks = project.tasks ?? [];
+  const totalTasks = tasks.length;
+  const doneTasks = tasks.filter((t) => t.status === "DONE").length;
+  const progress =
+    totalTasks === 0 ? 0 : Math.round((doneTasks / totalTasks) * 100);
+
   const inputClasses =
-    "w-full px-3 py-2 rounded mt-2 border text-sm dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-300";
+    "w-full px-3 py-2 rounded mt-2 border text-sm bg-gray-50 dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-300 cursor-not-allowed";
 
   const cardClasses =
-    "rounded-lg border p-6 not-dark:bg-white dark:bg-gradient-to-br dark:from-zinc-800/70 dark:to-zinc-900/50 border-zinc-300 dark:border-zinc-800";
+    "relative rounded-lg border p-6 not-dark:bg-white dark:bg-gradient-to-br dark:from-zinc-800/70 dark:to-zinc-900/50 border-zinc-300 dark:border-zinc-800";
 
-  const labelClasses = "text-sm text-zinc-600 dark:text-zinc-400";
+  const labelClasses =
+    "text-sm text-zinc-600 dark:text-zinc-400";
 
   return (
     <div className="grid lg:grid-cols-2 gap-8">
-      {/* ===== Project Details ===== */}
+
+      {/* edit dialog */}
+      <EditProjectDialog
+        isDialogOpen={isEditOpen}
+        setIsDialogOpen={setIsEditOpen}
+        project={project}
+      />
+
+      {/* project details */}
       <div className={cardClasses}>
+
+        {isProjectOwner && (
+          <button
+            onClick={handleEdit}
+            className="absolute top-3 right-3 text-xs bg-blue-600 rounded px-2 py-1 flex text-white gap-2 border border-gray-500"
+          >
+            Edit
+          </button>
+        )}
+
         <h2 className="text-lg font-medium text-zinc-900 dark:text-zinc-300 mb-4">
           Project Details
         </h2>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Name */}
-          <div className="space-y-2">
+        <div className="space-y-4">
+
+          <div>
             <label className={labelClasses}>Project Name</label>
             <input
-              value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
+              value={project.name || ""}
+              readOnly
               className={inputClasses}
-              required
             />
           </div>
 
-          {/* Description */}
-          <div className="space-y-2">
+          <div>
+            <label className={labelClasses}>Project Owner</label>
+            <input
+              value={
+                projectOwner
+                  ? `${projectOwner.first_name || ""} ${projectOwner.last_name || ""}`.trim() ||
+                    projectOwner.email
+                  : ""
+              }
+              readOnly
+              className={inputClasses}
+            />
+          </div>
+
+          <div>
             <label className={labelClasses}>Description</label>
             <textarea
-              value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-              className={inputClasses + " h-24"}
+              value={project.description ?? ""}
+              readOnly
+              className={`${inputClasses} h-24`}
             />
           </div>
 
-          {/* Status & Priority */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
+            <div>
               <label className={labelClasses}>Status</label>
-              <select
-                value={formData.status}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    status: e.target.value as ProjectStatus,
-                  })
-                }
+              <input
+                value={project.status}
+                readOnly
                 className={inputClasses}
-              >
-                <option value="PLANNING">Planning</option>
-                <option value="ACTIVE">Active</option>
-                <option value="ON_HOLD">On Hold</option>
-                <option value="COMPLETED">Completed</option>
-                <option value="CANCELLED">Cancelled</option>
-              </select>
+              />
             </div>
 
-            <div className="space-y-2">
+            <div>
               <label className={labelClasses}>Priority</label>
-              <select
-                value={formData.priority}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    priority: e.target.value as ProjectPriority,
-                  })
-                }
+              <input
+                value={project.priority ?? "MEDIUM"}
+                readOnly
                 className={inputClasses}
-              >
-                <option value="LOW">Low</option>
-                <option value="MEDIUM">Medium</option>
-                <option value="HIGH">High</option>
-              </select>
+              />
             </div>
           </div>
 
-          {/* Dates */}
-          <div className="space-y-4 grid grid-cols-2 gap-4">
-            <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
               <label className={labelClasses}>Start Date</label>
               <input
-                type="date"
-                value={
-                  formData.start_date
-                    ? format(formData.start_date, "yyyy-MM-dd")
-                    : ""
-                }
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    start_date: e.target.value
-                      ? new Date(e.target.value)
-                      : null,
-                  })
-                }
+                value={project.start_date ?? ""}
+                readOnly
                 className={inputClasses}
               />
             </div>
 
-            <div className="space-y-2">
+            <div>
               <label className={labelClasses}>End Date</label>
               <input
-                type="date"
-                value={
-                  formData.end_date
-                    ? format(formData.end_date, "yyyy-MM-dd")
-                    : ""
-                }
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    end_date: e.target.value
-                      ? new Date(e.target.value)
-                      : null,
-                  })
-                }
+                value={project.end_date ?? ""}
+                readOnly
                 className={inputClasses}
               />
             </div>
           </div>
 
-          {/* Progress */}
-          <div className="space-y-2">
-            <label className={labelClasses}>
-              Progress: {formData.progress}%
-            </label>
+          {/* progress tracking */}
+          <div>
+            <label className={labelClasses}>Progress</label>
+
             <input
-              type="range"
-              min="0"
-              max="100"
-              step="5"
-              value={formData.progress}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  progress: Number(e.target.value),
-                })
-              }
-              className="w-full accent-blue-500 dark:accent-blue-400"
+              value={`${progress}%`}
+              readOnly
+              className={inputClasses}
             />
+
+            <div className="w-full bg-gray-200 dark:bg-zinc-800 h-2 rounded mt-2">
+              <div
+                className="h-2 rounded bg-blue-500 transition-all"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+
+            <div className="text-xs text-zinc-500 mt-1">
+              {doneTasks} / {totalTasks} tasks completed
+            </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="ml-auto flex items-center text-sm justify-center gap-2 bg-gradient-to-br from-blue-500 to-blue-600 text-white px-4 py-2 rounded"
-          >
-            <Save className="size-4" />
-            {isSubmitting ? "Saving..." : "Save Changes"}
-          </button>
-        </form>
+        </div>
       </div>
 
       {/* team members */}
@@ -251,13 +200,14 @@ export default function ProjectSettings({ project }: Props) {
           </div>
 
           {project.members.length > 0 && (
-            <div className="space-y-2 mt-2 max-h-32 overflow-y-auto">
+            <div className="space-y-2 mt-3">
               {project.members.map((member) => (
                 <div
                   key={member.user.id}
                   className="flex items-center justify-between px-3 py-2 rounded dark:bg-zinc-800 text-sm"
                 >
                   <span>{member.user.email}</span>
+
                   {project.team_lead === member.user.id && (
                     <span className="px-2 py-0.5 rounded-xs ring ring-zinc-200 dark:ring-zinc-600">
                       Team Lead

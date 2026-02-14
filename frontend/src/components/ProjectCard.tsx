@@ -23,7 +23,7 @@ const ProjectCard = ({
   const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
 
-  // check if current user is project admin (owner)
+  // check if current user is project admin owner
   const isProjectOwner = project.members?.some(
     (m) => m.user.id === user?.id && m.role === "admin"
   );

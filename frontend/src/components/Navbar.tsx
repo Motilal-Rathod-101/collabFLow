@@ -5,8 +5,7 @@ import type { RootState, AppDispatch } from "../app/store";
 
 import { logout as logoutApi } from "../api/auth";
 import { logout as logoutAction } from "../features/authSlice";
-import { useNavigate } from "react-router-dom";
-
+import { useNavigate,NavLink } from "react-router-dom";
 
 
 interface NavbarProps {
@@ -16,8 +15,6 @@ interface NavbarProps {
 
 
 const Navbar: React.FC<NavbarProps> = ({ setIsSidebarOpen }) => {
-
-  const { user } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const theme = useSelector((state: RootState) => state.theme.theme);
@@ -53,15 +50,18 @@ const Navbar: React.FC<NavbarProps> = ({ setIsSidebarOpen }) => {
             )}
           </button>
 
-          {/* User image */}
-          {/* <img
-            src={assets.profile_img_a}
-            alt="User Img"
-            className="size-7 rounded-full"
-          /> */}
-          <div className="size-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-semibold">
-            {/* {user?.username?.charAt(0).toUpperCase() || "M"} */}{"M"}
-        </div>
+        <NavLink
+              to="/settings"
+              className={({ isActive }) =>
+                `flex items-center gap-3 py-2 px-4 text-gray-800 dark:text-zinc-100 cursor-pointer rounded transition-all ${
+                  isActive
+                    ? 'bg-gray-100 dark:bg-zinc-900 dark:bg-gradient-to-br dark:from-zinc-800 dark:to-zinc-800/50'
+                    : 'hover:bg-gray-50 dark:hover:bg-zinc-800/60'
+                }`
+              }
+            >
+          <div className="size-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-semibold">M</div>
+            </NavLink>
 
 
 
@@ -78,7 +78,7 @@ const Navbar: React.FC<NavbarProps> = ({ setIsSidebarOpen }) => {
           </button>
         </div>
       </div>
-    </div>
+     </div>
   );
 };
 

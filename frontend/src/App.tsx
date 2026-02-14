@@ -14,6 +14,7 @@ import Signup from "./pages/Signup";
 import ProtectedRoute from "./components/ProtectedRoutes";
 import { Toaster } from "react-hot-toast";
 import { fetchWorkspaces } from "./features/workspaceSlice";
+import Settings from "./components/UserSetting.tsx";
 
 const App = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -46,6 +47,7 @@ const App = () => {
             <Route path="/projects" element={<Projects />} />
             <Route path="/projectsDetail" element={<ProjectDetails />} />
             <Route path="/taskDetails" element={<TaskDetails />} />
+            <Route path="/settings" element={<Settings />} />
           </Route>
         </Route>
       </Routes>

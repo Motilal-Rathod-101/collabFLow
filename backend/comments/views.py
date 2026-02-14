@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 from .models import Comment
 from .serializers import CommentSerializer
 from tasks.models import Task
-from projects.permissions import is_project_member
+from core.permissions import is_project_member
 
 
 class CommentListView(APIView):

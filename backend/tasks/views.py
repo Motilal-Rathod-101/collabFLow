@@ -8,7 +8,8 @@ from rest_framework.views import APIView
 from .models import Task
 from .serializers import TaskSerializer
 from projects.models import Project
-from projects.permissions import is_project_member, is_project_admin
+from core.permissions import is_project_member, is_project_admin
+
 
 
 class TaskListView(APIView):

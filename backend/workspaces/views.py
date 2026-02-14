@@ -8,8 +8,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Workspace, WorkspaceMember
-from .permissions import is_workspace_admin
+from .models import Workspace, WorkspaceMember, WorkspaceInvitation
+from core.permissions import is_workspace_admin
 from .serializers import WorkspaceSerializer
 
 User = get_user_model()
@@ -19,13 +19,19 @@ class WorkspaceListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        workspaces = Workspace.objects.filter(members__user=request.user).distinct()
+        workspaces = Workspace.objects.filter(
+            members__user=request.user
+        ).distinct()
         return Response(WorkspaceSerializer(workspaces, many=True).data)
 
     def post(self, request):
         name = request.data.get("name")
+
         if not name:
-            return Response({"detail": "name is required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "name is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         workspace = Workspace.objects.create(
             name=name,
@@ -52,7 +58,7 @@ class WorkspaceDetailView(APIView):
 
         if not is_workspace_admin(request.user, workspace):
             return Response(
-                {"detail": "Only admin can delete workspace"},
+                {"detail": "only admin can delete workspace"},
                 status=status.HTTP_403_FORBIDDEN
             )
 
@@ -68,27 +74,20 @@ class AddWorkspaceMemberView(APIView):
 
         if not is_workspace_admin(request.user, workspace):
             return Response(
-                {"detail": "Only admin can add members"},
+                {"detail": "only admin can add members"},
                 status=status.HTTP_403_FORBIDDEN
             )
 
         role = request.data.get("role", "member")
-        if role not in ["admin", "member"]:
-            role = "member"
-
-        user_id = request.data.get("user")
         email = request.data.get("email")
 
-        user = None
-        if user_id:
-            user = get_object_or_404(User, id=user_id)
-        elif email:
-            user = get_object_or_404(User, email=email)
-        else:
+        if not email:
             return Response(
-                {"detail": "user or email is required"},
+                {"detail": "email required"},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+        user = get_object_or_404(User, email=email)
 
         WorkspaceMember.objects.get_or_create(
             workspace=workspace,
@@ -96,7 +95,7 @@ class AddWorkspaceMemberView(APIView):
             defaults={"role": role}
         )
 
-        return Response({"message": "Member added"}, status=status.HTTP_200_OK)
+        return Response({"message": "member added"})
 
 
 class InviteWorkspaceMemberView(APIView):
@@ -106,46 +105,46 @@ class InviteWorkspaceMemberView(APIView):
         workspace = get_object_or_404(Workspace, id=workspace_id)
 
         if not is_workspace_admin(request.user, workspace):
-            return Response(
-                {"detail": "Only admin can invite members"},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            return Response({"detail": "forbidden"}, status=403)
 
         email = request.data.get("email")
-        role = request.data.get("role", "member")
-
-        if role not in ["admin", "member"]:
-            role = "member"
 
         if not email:
-            return Response({"detail": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "email required"}, status=400)
 
-        try:
-            user = User.objects.get(email=email)
+        # if user already exists add directly
+        existing_user = User.objects.filter(email=email).first()
 
+        if existing_user:
             WorkspaceMember.objects.get_or_create(
                 workspace=workspace,
-                user=user,
-                defaults={"role": role}
+                user=existing_user,
+                defaults={"role": "member"}
             )
 
             send_mail(
-                subject="You have been added to a workspace",
-                message=f"You were added to workspace: {workspace.name}",
-                from_email=settings.EMAIL_HOST_USER,
-                recipient_list=[email],
-                fail_silently=False,
+                "added to workspace",
+                f"you were added to workspace: {workspace.name}",
+                settings.EMAIL_HOST_USER,
+                [email],
             )
 
-            return Response({"message": "User added & email sent"}, status=status.HTTP_200_OK)
+            return Response({"message": "user added"})
 
-        except User.DoesNotExist:
-            send_mail(
-                subject="Workspace Invitation",
-                message=f"You are invited to join workspace: {workspace.name}. Please sign up.",
-                from_email=settings.EMAIL_HOST_USER,
-                recipient_list=[email],
-                fail_silently=False,
-            )
+        # create invitation
+        invite = WorkspaceInvitation.objects.create(
+            workspace=workspace,
+            email=email,
+            invited_by=request.user
+        )
 
-            return Response({"message": "Invitation email sent"}, status=status.HTTP_200_OK)
+        signup_link = f"http://localhost:5173/signup?token={invite.token}"
+
+        send_mail(
+            "workspace invitation",
+            f"you are invited to join workspace: {workspace.name}\n\nsignup here:\n{signup_link}",
+            settings.EMAIL_HOST_USER,
+            [email],
+        )
+
+        return Response({"message": "invitation sent"})

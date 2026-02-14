@@ -1,9 +1,13 @@
 import { useState } from "react";
 import { signup } from "../api/auth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 export default function Signup() {
   const navigate = useNavigate();
+
+  // get invite token from url
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("token");
 
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -21,7 +25,15 @@ export default function Signup() {
 
     try {
       setLoading(true);
-      await signup({ email, username, password });
+
+      // send token if exists
+      await signup({
+        email,
+        username,
+        password,
+        token,
+      });
+
       navigate("/login");
     } catch (err) {
       setError("Signup failed. Try again.");
@@ -30,7 +42,7 @@ export default function Signup() {
     }
   };
 
-  //google signup UI Only
+  // google signup
   const handleGoogleSignup = () => {
     window.location.href = "http://localhost:8000/api/auth/google/";
   };
@@ -39,7 +51,7 @@ export default function Signup() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 dark:from-zinc-900 dark:to-black px-4">
       <div className="w-full max-w-md bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-2xl shadow-xl p-8">
 
-        {/* Header */}
+        {/* header */}
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             Create account
@@ -49,14 +61,14 @@ export default function Signup() {
           </p>
         </div>
 
-        {/* Error */}
+        {/* error */}
         {error && (
           <div className="mb-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-2 text-sm text-red-600 dark:text-red-400">
             {error}
           </div>
         )}
 
-        {/* Google Signup */}
+        {/* google signup */}
         <button
           onClick={handleGoogleSignup}
           className="w-full flex items-center justify-center gap-3 border border-gray-300 dark:border-zinc-700 rounded-lg py-2 text-sm font-medium hover:bg-gray-50 dark:hover:bg-zinc-900 transition"
@@ -69,7 +81,7 @@ export default function Signup() {
           Sign up with Google
         </button>
 
-        {/* Divider */}
+        {/* divider */}
         <div className="flex items-center gap-3 my-6">
           <div className="flex-1 h-px bg-gray-300 dark:bg-zinc-700" />
           <span className="text-xs text-gray-500 dark:text-zinc-400">
@@ -78,7 +90,7 @@ export default function Signup() {
           <div className="flex-1 h-px bg-gray-300 dark:bg-zinc-700" />
         </div>
 
-        {/* Form */}
+        {/* form */}
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">
@@ -101,7 +113,7 @@ export default function Signup() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter email"
-              className="mt-1 w-full rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-1 w-full rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 py-2"
             />
           </div>
 
@@ -114,7 +126,7 @@ export default function Signup() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Create password"
-              className="mt-1 w-full rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-1 w-full rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 py-2"
             />
           </div>
 
@@ -127,7 +139,7 @@ export default function Signup() {
           </button>
         </div>
 
-        {/* Footer */}
+        {/* footer */}
         <div className="mt-6 text-center text-sm text-gray-500 dark:text-zinc-400">
           Already have an account?{" "}
           <span

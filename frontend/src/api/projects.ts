@@ -26,3 +26,14 @@ export const getProjectMembers = async (projectId: string) => {
   const res = await api.get(`/projects/${projectId}/members/`);
   return res.data;
 };
+
+// assing project to member
+export const addProjectMember = async (
+  projectId: string,
+  userId: string
+) => {
+  const res = await api.post(`projects/${projectId}/members/add/`, {
+    user: userId,
+  });
+  return res.data;
+};

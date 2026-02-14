@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Project, ProjectMember
-from .permissions import is_project_admin
+from core.permissions import is_project_admin
 from .serializers import ProjectSerializer, ProjectMemberSerializer
 
 
