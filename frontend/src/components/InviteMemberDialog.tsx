@@ -28,7 +28,16 @@ const InviteMemberDialog = ({
     role: "member",
   });
 
+
+  const validateEmail = (email:string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+      if (!validateEmail(formData.email)) {
+        alert("invalid email address");
+        return;
+      }
+
     e.preventDefault();
     if (!currentWorkspace) return;
 

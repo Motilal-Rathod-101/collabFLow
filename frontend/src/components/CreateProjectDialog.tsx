@@ -8,11 +8,9 @@ import { createProject } from "../api/projects";
 import { useDispatch } from "react-redux";
 import { addProject } from "../features/workspaceSlice";
 
-
 interface CreateProjectDialogProps {
   isDialogOpen: boolean;
   setIsDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  
 }
 
 interface FormData {
@@ -31,7 +29,9 @@ const CreateProjectDialog = ({
   isDialogOpen,
   setIsDialogOpen,
 }: CreateProjectDialogProps) => {
-  const { currentWorkspace } = useSelector((state: RootState) => state.workspace);
+  const { currentWorkspace } = useSelector(
+    (state: RootState) => state.workspace
+  );
 
   const [formData, setFormData] = useState<FormData>({
     name: "",
@@ -46,12 +46,71 @@ const CreateProjectDialog = ({
   });
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
   const dispatch = useDispatch();
 
+  // frontend validation aligned with django models
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = "project name is required";
+    }
+
+    if (formData.name.length > 255) {
+      newErrors.name = "project name cannot exceed 255 characters";
+    }
+
+    const exists = currentWorkspace?.projects?.some(
+      (p) =>
+        p.name.toLowerCase().trim() ===
+        formData.name.toLowerCase().trim()
+    );
+
+    if (exists) {
+      newErrors.name = "project with this name already exists";
+    }
+
+    const validStatus = ["PLANNING", "ACTIVE", "ON_HOLD", "COMPLETED"];
+    if (!validStatus.includes(formData.status)) {
+      newErrors.status = "invalid status selected";
+    }
+
+    const validPriority = ["LOW", "MEDIUM", "HIGH"];
+    if (!validPriority.includes(formData.priority)) {
+      newErrors.priority = "invalid priority selected";
+    }
+
+    if (
+      formData.start_date &&
+      formData.end_date &&
+      formData.end_date < formData.start_date
+    ) {
+      newErrors.end_date = "end date cannot be before start date";
+    }
+
+    if (
+      formData.team_lead &&
+      !formData.team_members.includes(formData.team_lead)
+    ) {
+      newErrors.team_lead =
+        "team lead must be part of team members";
+    }
+
+    const uniqueMembers = new Set(formData.team_members);
+    if (uniqueMembers.size !== formData.team_members.length) {
+      newErrors.team_members = "duplicate members not allowed";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!currentWorkspace) return;
+    if (!validateForm()) return;
 
     setIsSubmitting(true);
 
@@ -64,6 +123,13 @@ const CreateProjectDialog = ({
 
       dispatch(addProject(project));
       setIsDialogOpen(false);
+    } catch (err: any) {
+      setErrors({
+        name:
+          err?.response?.data?.name?.[0] ||
+          err?.response?.data?.detail ||
+          "failed to create project",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -73,10 +139,10 @@ const CreateProjectDialog = ({
     setFormData((prev) => ({
       ...prev,
       team_members: prev.team_members.filter((m) => m !== email),
+      team_lead:
+        prev.team_lead === email ? "" : prev.team_lead,
     }));
   };
-
-  
 
   if (!isDialogOpen) return null;
 
@@ -91,6 +157,7 @@ const CreateProjectDialog = ({
         </button>
 
         <h2 className="text-xl font-medium mb-1">Create New Project</h2>
+
         {currentWorkspace && (
           <p className="text-sm cpd-subtitle mb-4">
             In workspace:{" "}
@@ -101,7 +168,8 @@ const CreateProjectDialog = ({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Project Name */}
+
+          {/* project name */}
           <div>
             <label className="block text-sm mb-1">Project Name</label>
             <input
@@ -114,9 +182,12 @@ const CreateProjectDialog = ({
               className="w-full px-3 py-2 rounded cpd-input text-sm"
               required
             />
+            {errors.name && (
+              <p className="text-red-500 text-xs mt-1">{errors.name}</p>
+            )}
           </div>
 
-          {/* Description */}
+          {/* description */}
           <div>
             <label className="block text-sm mb-1">Description</label>
             <textarea
@@ -129,7 +200,7 @@ const CreateProjectDialog = ({
             />
           </div>
 
-          {/* Status & Priority */}
+          {/* status & priority */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm mb-1">Status</label>
@@ -144,7 +215,6 @@ const CreateProjectDialog = ({
                 <option value="ACTIVE">Active</option>
                 <option value="COMPLETED">Completed</option>
                 <option value="ON_HOLD">On Hold</option>
-                <option value="CANCELLED">Cancelled</option>
               </select>
             </div>
 
@@ -164,7 +234,7 @@ const CreateProjectDialog = ({
             </div>
           </div>
 
-          {/* Dates */}
+          {/* dates */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm mb-1">Start Date</label>
@@ -176,7 +246,11 @@ const CreateProjectDialog = ({
                 }
                 className="w-full px-3 py-2 rounded cpd-input text-sm"
               />
+              {errors.end_date && (
+                <p className="text-red-500 text-xs">{errors.end_date}</p>
+              )}
             </div>
+
             <div>
               <label className="block text-sm mb-1">End Date</label>
               <input
@@ -197,40 +271,40 @@ const CreateProjectDialog = ({
             </div>
           </div>
 
-          {/* Lead */}
+          {/* lead */}
           <div>
             <label className="block text-sm mb-1">Project Lead</label>
-          
+
             <select
-            value={formData.team_lead}
-            onChange={(e) =>
-              setFormData({
-                ...formData,
-                team_lead: e.target.value,
-                team_members: e.target.value
-                  ? [...new Set([...formData.team_members, e.target.value])]
-                  : formData.team_members,
-              })
-            }
-            className="w-full px-3 py-2 rounded cpd-input text-sm"
-          >
-            <option value="">No lead</option>
+              value={formData.team_lead}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  team_lead: e.target.value,
+                  team_members: e.target.value
+                    ? [...new Set([...formData.team_members, e.target.value])]
+                    : formData.team_members,
+                })
+              }
+              className="w-full px-3 py-2 rounded cpd-input text-sm"
+            >
+              <option value="">No lead</option>
 
-            {currentWorkspace?.members?.map((member) => (
-              <option
-                key={member.user.email}
-                value={member.user.email}
-              >
-                {member.user.email}
-              </option>
-            ))}
-          </select>
-
+              {currentWorkspace?.members?.map((member) => (
+                <option
+                  key={member.user.email}
+                  value={member.user.email}
+                >
+                  {member.user.email}
+                </option>
+              ))}
+            </select>
           </div>
 
-          {/* Team Members */}
+          {/* team members */}
           <div>
             <label className="block text-sm mb-1">Team Members</label>
+
             <select
               className="w-full px-3 py-2 rounded cpd-input text-sm"
               onChange={(e) => {
@@ -246,6 +320,7 @@ const CreateProjectDialog = ({
               }}
             >
               <option value="">Add team members</option>
+
               {currentWorkspace?.members
                 ?.filter(
                   (member) =>
@@ -282,7 +357,7 @@ const CreateProjectDialog = ({
             )}
           </div>
 
-          {/* Footer */}
+          {/* footer */}
           <div className="flex justify-end gap-3 pt-2 text-sm">
             <button
               type="button"
@@ -291,6 +366,7 @@ const CreateProjectDialog = ({
             >
               Cancel
             </button>
+
             <button
               disabled={isSubmitting || !currentWorkspace}
               className="px-4 py-2 rounded cpd-btn-primary"

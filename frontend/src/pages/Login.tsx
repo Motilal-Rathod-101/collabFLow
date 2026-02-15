@@ -18,7 +18,7 @@ export default function Login() {
   const handleLogin = async () => {
     setError("");
 
-    if (!username || !password) {
+    if (!username.trim() || !password.trim()) {
       setError("Username and password are required");
       return;
     }

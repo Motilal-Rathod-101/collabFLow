@@ -8,21 +8,21 @@ from rest_framework.views import APIView
 from .models import Task
 from .serializers import TaskSerializer
 from projects.models import Project
-from core.permissions import is_project_member, is_project_admin
-
+from core.permissions import (
+    IsProjectMemberPermission,
+    IsProjectAdminPermission,
+    is_project_admin,
+)
 
 
 class TaskListView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsProjectMemberPermission]
 
     def get(self, request, project_id):
         project = get_object_or_404(Project, id=project_id)
 
-        if not is_project_member(request.user, project):
-            return Response(
-                {"detail": "forbidden"},
-                status=status.HTTP_403_FORBIDDEN
-            )
+        # check project membership
+        self.check_object_permissions(request, project)
 
         tasks = (
             Task.objects
@@ -35,12 +35,13 @@ class TaskListView(APIView):
             many=True,
             context={"project": project}
         )
+
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request, project_id):
         project = get_object_or_404(Project, id=project_id)
 
-        # only project admin can create task
+        # only admin can create task
         if not is_project_admin(request.user, project):
             return Response(
                 {"detail": "only admin can create task"},
@@ -51,6 +52,7 @@ class TaskListView(APIView):
             data=request.data,
             context={"project": project}
         )
+
         serializer.is_valid(raise_exception=True)
 
         task = serializer.save(
@@ -65,19 +67,15 @@ class TaskListView(APIView):
 
 
 class TaskDetailView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsProjectMemberPermission]
 
     def put(self, request, pk):
         task = get_object_or_404(Task, id=pk)
 
-        # must be project member
-        if not is_project_member(request.user, task.project):
-            return Response(
-                {"detail": "forbidden"},
-                status=status.HTTP_403_FORBIDDEN
-            )
+        # check project membership
+        self.check_object_permissions(request, task.project)
 
-        # only admin or assignee can update
+        # admin or assignee can update
         if not (
             is_project_admin(request.user, task.project)
             or task.assignee == request.user
@@ -93,6 +91,7 @@ class TaskDetailView(APIView):
             partial=True,
             context={"project": task.project}
         )
+
         serializer.is_valid(raise_exception=True)
         task = serializer.save()
 
@@ -104,6 +103,7 @@ class TaskDetailView(APIView):
     def delete(self, request, pk):
         task = get_object_or_404(Task, id=pk)
 
+        # only admin delete allowed
         if not is_project_admin(request.user, task.project):
             return Response(
                 {"detail": "only admin can delete task"},
@@ -126,8 +126,11 @@ class BulkDeleteTaskView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        tasks = Task.objects.filter(id__in=ids).select_related("project")
+        tasks = Task.objects.filter(
+            id__in=ids
+        ).select_related("project")
 
+        # ensure admin for every task project
         for task in tasks:
             if not is_project_admin(request.user, task.project):
                 return Response(

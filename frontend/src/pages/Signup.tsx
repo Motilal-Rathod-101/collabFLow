@@ -15,32 +15,38 @@ export default function Signup() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSignup = async () => {
-    setError("");
 
-    if (!email || !username || !password) {
-      setError("All fields are required");
-      return;
-    }
+    const handleSignup = async () => {
+      setError("");
 
-    try {
-      setLoading(true);
+      if (!email.trim() || !username.trim() || !password.trim()) {
+        setError("All fields are required");
+        return;
+      }
+      
+      if (password.length < 6) {
+        setError("Password must be at least 6 characters");
+        return;
+      }
 
-      // send token if exists
-      await signup({
-        email,
-        username,
-        password,
-        token,
-      });
+      try {
+        setLoading(true);
 
-      navigate("/login");
-    } catch (err) {
-      setError("Signup failed. Try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+        await signup({
+          email,
+          username,
+          password,
+          token,
+        });
+
+        navigate("/login");
+      } catch (err) {
+        setError("Signup failed. Try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
 
   // google signup
   const handleGoogleSignup = () => {

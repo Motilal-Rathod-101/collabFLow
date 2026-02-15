@@ -17,9 +17,15 @@ export default function Projects() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
 
+  const { user } = useSelector((state: RootState) => state.auth);
+
   const currentWorkspace = useSelector(
     (state: RootState) => state.workspace.currentWorkspace
   );
+  const isWorkspaceAdmin = currentWorkspace?.members?.some(
+  (m: any) => m.user.id === user?.id && m.role === "admin"
+);
+
 
   const projects: Project[] = currentWorkspace?.projects ?? [];
 
@@ -54,12 +60,15 @@ export default function Projects() {
           <p className="text-sm text-gray-500">Manage and track your projects</p>
         </div>
 
+        {isWorkspaceAdmin && (
+
         <button
           onClick={() => setIsDialogOpen(true)}
           className="flex items-center px-4 py-2 bg-blue-600 text-white rounded"
         >
           <Plus className="w-4 h-4 mr-2" /> New Project
         </button>
+        )}
       </div>
 
       <div className="relative max-w-sm">

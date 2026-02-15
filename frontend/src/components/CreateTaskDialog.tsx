@@ -45,6 +45,9 @@ export default function CreateTaskDialog({
   const teamMembers = project?.members ?? [];
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string,string>>({});
+
+
 
   const [formData, setFormData] = useState<FormData>({
     title: "",
@@ -56,7 +59,20 @@ export default function CreateTaskDialog({
     due_date: "",
   });
 
+  const validateForm = () => {
+    const newErrors: Record<string,string> = {};
+
+    if (!formData.title.trim()) {
+      newErrors.title = "task title required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    if (!validateForm()) return;
     e.preventDefault();
     if (!projectId || isSubmitting) return;
 
@@ -111,6 +127,10 @@ export default function CreateTaskDialog({
             className="w-full rounded border px-3 py-2"
             required
           />
+          {errors.title && (
+            <p className="text-red-500 text-xs">{errors.title}</p>
+          )}
+
 
           <textarea
             value={formData.description}

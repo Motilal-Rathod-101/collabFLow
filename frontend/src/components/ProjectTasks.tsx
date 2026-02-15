@@ -136,9 +136,6 @@ const ProjectTasks = ({ tasks }: { tasks: Task[] }) => {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("Are you sure you want to delete the selected tasks?"))
-      return;
-
     try {
       toast.loading("Deleting tasks...");
       await deleteTasksApi(selectedTasks);

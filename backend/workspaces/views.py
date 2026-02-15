@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Workspace, WorkspaceMember, WorkspaceInvitation
-from core.permissions import is_workspace_admin
+from core.permissions import IsWorkspaceAdminPermission
 from .serializers import WorkspaceSerializer
 
 User = get_user_model()
@@ -22,7 +22,10 @@ class WorkspaceListView(APIView):
         workspaces = Workspace.objects.filter(
             members__user=request.user
         ).distinct()
-        return Response(WorkspaceSerializer(workspaces, many=True).data)
+
+        return Response(
+            WorkspaceSerializer(workspaces, many=True).data
+        )
 
     def post(self, request):
         name = request.data.get("name")
@@ -38,6 +41,7 @@ class WorkspaceListView(APIView):
             owner=request.user
         )
 
+        # creator becomes admin
         WorkspaceMember.objects.get_or_create(
             workspace=workspace,
             user=request.user,
@@ -51,35 +55,29 @@ class WorkspaceListView(APIView):
 
 
 class WorkspaceDetailView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsWorkspaceAdminPermission]
 
     def delete(self, request, pk):
         workspace = get_object_or_404(Workspace, id=pk)
 
-        if not is_workspace_admin(request.user, workspace):
-            return Response(
-                {"detail": "only admin can delete workspace"},
-                status=status.HTTP_403_FORBIDDEN
-            )
+        # check workspace admin permission
+        self.check_object_permissions(request, workspace)
 
         workspace.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class AddWorkspaceMemberView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsWorkspaceAdminPermission]
 
     def post(self, request, workspace_id):
         workspace = get_object_or_404(Workspace, id=workspace_id)
 
-        if not is_workspace_admin(request.user, workspace):
-            return Response(
-                {"detail": "only admin can add members"},
-                status=status.HTTP_403_FORBIDDEN
-            )
+        # check workspace admin permission
+        self.check_object_permissions(request, workspace)
 
-        role = request.data.get("role", "member")
         email = request.data.get("email")
+        role = request.data.get("role", "member")
 
         if not email:
             return Response(
@@ -99,20 +97,22 @@ class AddWorkspaceMemberView(APIView):
 
 
 class InviteWorkspaceMemberView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsWorkspaceAdminPermission]
 
     def post(self, request, workspace_id):
         workspace = get_object_or_404(Workspace, id=workspace_id)
 
-        if not is_workspace_admin(request.user, workspace):
-            return Response({"detail": "forbidden"}, status=403)
+        # check workspace admin permission
+        self.check_object_permissions(request, workspace)
 
         email = request.data.get("email")
 
         if not email:
-            return Response({"detail": "email required"}, status=400)
+            return Response(
+                {"detail": "email required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-        # if user already exists add directly
         existing_user = User.objects.filter(email=email).first()
 
         if existing_user:
@@ -131,7 +131,6 @@ class InviteWorkspaceMemberView(APIView):
 
             return Response({"message": "user added"})
 
-        # create invitation
         invite = WorkspaceInvitation.objects.create(
             workspace=workspace,
             email=email,

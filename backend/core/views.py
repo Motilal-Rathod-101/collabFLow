@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.http import HttpResponse
 
+from django.contrib.auth import authenticate
+from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import UserSerializer, SignupSerializer
 
 
@@ -24,6 +26,35 @@ class SignupView(APIView):
             status=status.HTTP_201_CREATED
         )
 
+
+
+
+class LoginView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        username = request.data.get("username")
+        password = request.data.get("password")
+
+        user = authenticate(
+            request,
+            username=username,
+            password=password
+        )
+
+        if not user:
+            return Response(
+                {"detail": "Invalid username or password"},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        refresh = RefreshToken.for_user(user)
+
+        return Response({
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+            "user": UserSerializer(user).data
+        })
 
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]

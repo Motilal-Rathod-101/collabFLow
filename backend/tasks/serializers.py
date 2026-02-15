@@ -1,4 +1,3 @@
-# backend/tasks/serializers.py
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 
@@ -23,6 +22,7 @@ class TaskSerializer(serializers.ModelSerializer):
     project = serializers.PrimaryKeyRelatedField(read_only=True)
 
     assignee = AssigneeSerializer(read_only=True)
+
     assignee_id = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(),
         source="assignee",
@@ -37,20 +37,25 @@ class TaskSerializer(serializers.ModelSerializer):
         model = Task
         fields = "__all__"
 
+    # validate title
+    def validate_title(self, value):
+        if not value.strip():
+            raise serializers.ValidationError(
+                "task title cannot be empty"
+            )
+        return value
+
+    # main validation
     def validate(self, data):
         assignee = data.get("assignee")
 
-        # project = (
-        #     self.context.get("project")
-        #     or (self.instance.project if self.instance else None)
-        # )
-
+        # get project from context or instance
         if self.instance:
             project = self.instance.project
         else:
             project = self.context.get("project")
 
-
+        # assignee must be project member
         if assignee and project:
             is_member = ProjectMember.objects.filter(
                 project=project,
@@ -61,5 +66,13 @@ class TaskSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({
                     "assignee": "user is not a member of this project"
                 })
+
+        # due date basic validation
+        due_date = data.get("due_date")
+        if due_date and self.instance:
+            if due_date < self.instance.created_at.date():
+                raise serializers.ValidationError(
+                    {"due_date": "due date cannot be before task creation"}
+                )
 
         return data

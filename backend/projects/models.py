@@ -42,6 +42,10 @@ class Project(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        # same project name cannot exist twice in one workspace
+        unique_together = ["workspace", "name"]
+
     def __str__(self):
         return self.name
 
@@ -63,6 +67,10 @@ class ProjectMember(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default="member")
     joined_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        # prevent duplicate members
+        unique_together = ["project", "user"]
 
     def __str__(self):
         return f"{self.user} → {self.project}"

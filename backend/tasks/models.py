@@ -3,8 +3,10 @@ from django.conf import settings
 from projects.models import Project
 import uuid
 
+
 class Task(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
     STATUS_CHOICES = [
         ('TODO', 'TODO'),
         ('IN_PROGRESS', 'IN_PROGRESS'),
@@ -61,17 +63,20 @@ class Task(models.Model):
     )
 
     created_by = models.ForeignKey(
-    settings.AUTH_USER_MODEL,
-    on_delete=models.SET_NULL,
-    null=True,
-    related_name="created_tasks"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="created_tasks"
     )
-
 
     due_date = models.DateField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        # duplicate protection inside same project
+        unique_together = ["project", "title"]
 
     def __str__(self):
         return self.title
