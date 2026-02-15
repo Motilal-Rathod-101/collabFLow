@@ -15,3 +15,9 @@ export const updateProfile = async (data: {
   const res = await api.put("auth/user/profile/", data);
   return res.data;
 };
+
+// change pass
+export const changePassword = async (data: {old_password: string;new_password: string;}) => {
+  const res = await api.put("auth/change-password/", data);
+  return res.data;
+};
