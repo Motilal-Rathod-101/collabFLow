@@ -6,7 +6,7 @@ from django.http import HttpResponse
 
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import UserSerializer, SignupSerializer
+from .serializers import UserSerializer, SignupSerializer,ChangePasswordSerializer
 
 
 def home(request):
@@ -74,3 +74,29 @@ class UserProfileView(APIView):
         serializer.save()
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+# change password for logged in user
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request):
+        serializer = ChangePasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = request.user
+
+        # check old password
+        if not user.check_password(serializer.validated_data["old_password"]):
+            return Response(
+                {"detail": "old password is incorrect"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # set new password (django hashes automatically)
+        user.set_password(serializer.validated_data["new_password"])
+        user.save()
+
+        return Response(
+            {"detail": "password updated successfully"},
+            status=status.HTTP_200_OK
+        )

@@ -52,3 +52,8 @@ class SignupSerializer(serializers.ModelSerializer):
                 invite.save(update_fields=["accepted"])
 
         return user
+
+# rest pass
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)

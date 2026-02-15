@@ -1,7 +1,7 @@
 
 from django.contrib import admin
 from django.urls import path, include
-from core.views import home
+# from core.views import home
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -15,7 +15,7 @@ urlpatterns = [
     path("api/auth/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
 
     # apps 
-    path("home/",home),
+    # path("home/",home),
     path("api/", include("workspaces.urls")),
     path("api/", include("projects.urls")),
     path("api/", include("tasks.urls")),
