@@ -10,9 +10,10 @@ from rest_framework_simplejwt.views import (
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-        # jwt  
-    path("api/auth/login/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
-    path("api/auth/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+        # jwt 
+
+    # path("api/auth/login/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    # path("api/auth/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
 
     # apps 
     # path("home/",home),
@@ -20,5 +21,6 @@ urlpatterns = [
     path("api/", include("projects.urls")),
     path("api/", include("tasks.urls")),
     path("api/auth/", include("core.urls")),
+    path("api/", include("comments.urls")),
         
 ]

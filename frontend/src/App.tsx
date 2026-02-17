@@ -15,6 +15,9 @@ import ProtectedRoute from "./components/ProtectedRoutes";
 import { Toaster } from "react-hot-toast";
 import { fetchWorkspaces } from "./features/workspaceSlice";
 import Settings from "./components/UserSetting.tsx";
+import Notfound from "./pages/Notfound.tsx";
+
+
 
 const App = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -38,7 +41,7 @@ const App = () => {
         {/* public */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-
+        <Route path="*" element={<Notfound />} />
         {/* protected */}
         <Route element={<ProtectedRoute />}>
           <Route element={<Layout />}>
