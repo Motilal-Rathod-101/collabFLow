@@ -92,7 +92,7 @@ class ChangePasswordView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # set new password (django hashes automatically)
+        # set new password
         user.set_password(serializer.validated_data["new_password"])
         user.save()
 

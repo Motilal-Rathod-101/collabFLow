@@ -41,7 +41,7 @@ const App = () => {
         {/* public */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-        <Route path="*" element={<Notfound />} />
+        
         {/* protected */}
         <Route element={<ProtectedRoute />}>
           <Route element={<Layout />}>
@@ -53,6 +53,7 @@ const App = () => {
             <Route path="/settings" element={<Settings />} />
           </Route>
         </Route>
+        <Route path="*" element={<Notfound />} />
       </Routes>
     </>
   );
