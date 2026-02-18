@@ -3,6 +3,9 @@ import { UsersIcon, UserPlus, Activity, Shield, Search } from "lucide-react";
 import { useSelector } from "react-redux";
 import type { RootState } from "../app/store";
 import InviteMemberDialog from "../components/InviteMemberDialog";
+import { useDispatch } from "react-redux";
+import { removeWorkspaceMember } from "../api/workspaces";
+import { removeWorkspaceMember as removeWorkspaceMemberAction } from "../features/workspaceSlice";
 
 interface TeamMember {
   id: string;
@@ -40,6 +43,7 @@ export default function Team() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [tasks, setTasks] = useState<TeamTask[]>([]);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     if (!currentWorkspace) {
@@ -47,6 +51,8 @@ export default function Team() {
       setTasks([]);
       return;
     }
+
+
 
     const allTasks: TeamTask[] =
       currentWorkspace.projects?.flatMap((p) =>
@@ -97,6 +103,24 @@ export default function Team() {
       u.user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+
+  
+    const handleRemoveWorkspaceMember = async (userId: string) => {
+      if (!currentWorkspace) return;
+
+      try {
+        await removeWorkspaceMember(currentWorkspace.id, userId);
+
+        dispatch(
+          removeWorkspaceMemberAction({
+            workspaceId: currentWorkspace.id,
+            userId,
+          })
+        );
+      } catch (err) {
+        console.error(err);
+      }
+    };
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Header */}
@@ -211,7 +235,17 @@ export default function Team() {
                       }`}
                     >
                       {user.role}
+
                     </span>
+                    {isAdmin() && user.user.id !== authUser?.id && (
+                    <button
+                      onClick={() => handleRemoveWorkspaceMember(user.user.id)}
+                      className="ml-3 text-xs px-2 py-1 rounded bg-blue-500 text-white hover:bg-red-600"
+                    >
+                      Remove
+                    </button>
+                  )}
+
                   </td>
                 </tr>
               ))}

@@ -147,3 +147,36 @@ class InviteWorkspaceMemberView(APIView):
         )
 
         return Response({"message": "invitation sent"})
+
+
+# remove from workspaces
+
+
+class RemoveWorkspaceMemberView(APIView):
+    permission_classes = [IsAuthenticated, IsWorkspaceAdminPermission]
+
+    def delete(self, request, workspace_id, user_id):
+        workspace = get_object_or_404(Workspace, id=workspace_id)
+
+        # admin permission check
+        self.check_object_permissions(request, workspace)
+
+        member = get_object_or_404(
+            WorkspaceMember,
+            workspace=workspace,
+            user_id=user_id
+        )
+
+        # prevent removing admin
+        if member.role == "admin":
+            return Response(
+                {"detail": "Admin cannot be removed"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        member.delete()
+
+        return Response(
+            {"message": "Workspace member removed"},
+            status=status.HTTP_200_OK
+        )

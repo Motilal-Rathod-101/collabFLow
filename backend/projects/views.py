@@ -1,3 +1,4 @@
+from tasks.models import Task
 from django.shortcuts import get_object_or_404
 
 from rest_framework import status
@@ -118,3 +119,43 @@ class AddProjectMemberView(APIView):
         )
 
         return Response({"message": "Member added"})
+
+
+
+class RemoveProjectMemberView(APIView):
+    permission_classes = [IsAuthenticated, IsProjectAdminPermission]
+
+    def delete(self, request, project_id, user_id):
+        # get project
+        project = get_object_or_404(Project, id=project_id)
+
+        # check admin permission
+        self.check_object_permissions(request, project)
+
+        # get member
+        member = get_object_or_404(
+            ProjectMember,
+            project=project,
+            user_id=user_id
+        )
+
+        # prevent removing admin
+        if member.role == "admin":
+            return Response(
+                {"detail": "Admin cannot be removed"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # unassign tasks of removed member
+        Task.objects.filter(
+            project=project,
+            assignee_id=user_id
+        ).update(assignee=None)
+
+        # remove membership
+        member.delete()
+
+        return Response(
+            {"message": "Member removed successfully"},
+            status=status.HTTP_200_OK
+        )

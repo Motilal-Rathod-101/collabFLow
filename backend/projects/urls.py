@@ -4,7 +4,7 @@ from .views import (
     ProjectDetailView,
     ProjectMembersView,
     AddProjectMemberView,
-    # RemoveProjectMemberView,
+    RemoveProjectMemberView,
     # ChangeProjectMemberRoleView,
 )
 
@@ -14,4 +14,8 @@ urlpatterns = [
 
     path("projects/<uuid:project_id>/members/", ProjectMembersView.as_view()),
     path("projects/<uuid:project_id>/members/add/", AddProjectMemberView.as_view()),
+      path(
+        "projects/<uuid:project_id>/members/<uuid:user_id>/",
+        RemoveProjectMemberView.as_view(),
+    ),
 ]

@@ -7,15 +7,13 @@ import { CalendarIcon, MessageCircle, PenIcon } from "lucide-react";
 import { getCommentsByTask, addComment } from "../api/comments";
 
 
-
-
-//type
-
-interface User {
+interface CommentUser {
   id: string | number;
+  username?: string;
   first_name?: string;
   last_name?: string;
   image?: string;
+  name?: string;
 }
 
 interface Comment {
@@ -54,8 +52,6 @@ interface Project {
   tasks: Task[];
 }
 
-// components
-
 const TaskDetails = () => {
   const [searchParams] = useSearchParams();
   const projectId = searchParams.get("projectId");
@@ -69,99 +65,108 @@ const TaskDetails = () => {
   const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // fetching tasks
+ 
+  // fetch task
+  useEffect(() => {
+    if (!currentWorkspace || !projectId || !taskId) return;
 
-useEffect(() => {
-  if (!currentWorkspace || !projectId || !taskId) return;
+    setLoading(true);
 
-  setLoading(true);
+    const proj = currentWorkspace.projects.find(
+      (p: Project) => String(p.id) === projectId
+    );
 
-  const proj = currentWorkspace.projects.find(
-    (p: Project) => String(p.id) === projectId
-  );
-  if (!proj) {
+    if (!proj) {
+      setLoading(false);
+      return;
+    }
+
+    const tsk = proj.tasks.find(
+      (t: Task) => String(t.id) === taskId
+    );
+
+    if (!tsk) {
+      setLoading(false);
+      return;
+    }
+
+    setProject(proj);
+    setTask(tsk);
     setLoading(false);
-    return;
-  }
+  }, [currentWorkspace, projectId, taskId]);
 
-  const tsk = proj.tasks.find(
-    (t: Task) => String(t.id) === taskId
-  );
-  if (!tsk) {
-    setLoading(false);
-    return;
-  }
+  // fetch comments
+  const getUserName = (user: CommentUser) => {
+    const fullName =
+      `${user.first_name || ""} ${user.last_name || ""}`.trim();
 
-  setProject(proj);
-  setTask(tsk);
-  setLoading(false);
-}, [currentWorkspace, projectId, taskId]);
-
-
-  // comments
+    return fullName || user.username || user.name || "User";
+  };
 
   const fetchComments = async () => {
-  if (!taskId) return;
+    if (!taskId) return;
 
-  const data = await getCommentsByTask(taskId);
+    try {
+      const data = await getCommentsByTask(taskId);
 
-  const formatted = data.map((c: any) => ({
-    id: c.id,
-    content: c.content,
-    createdAt: c.created_at,
-    user: {
-      id: c.user.id,
-      name: `${c.user.first_name} ${c.user.last_name}`,
-      image: c.user.image,
-    },
-  }));
-
-  setComments(formatted);
-};
-
-
-  useEffect(() => {
-    fetchComments();
-  }, [taskId]);
-
-  // adding comments
-const handleAddComment = async () => {
-  if (!newComment.trim() || !taskId) return;
-
-  try {
-    toast.loading("Adding comment...");
-
-    const c = await addComment(taskId, newComment);
-
-    setComments((prev) => [
-      ...prev,
-      {
+      const formatted = data.map((c: any) => ({
         id: c.id,
         content: c.content,
         createdAt: c.created_at,
         user: {
           id: c.user.id,
-          name: `${c.user.first_name} ${c.user.last_name}`,
+          name: getUserName(c.user),
           image: c.user.image,
         },
-      },
-    ]);
+      }));
 
-    setNewComment("");
-    toast.dismiss();
-    toast.success("Comment added");
-  } catch {
-    toast.dismiss();
-    toast.error("Failed to add comment");
-  }
-};
+      setComments(formatted);
+    } catch {
+      toast.error("Failed to load comments");
+    }
+  };
 
+  useEffect(() => {
+    fetchComments();
+  }, [taskId]);
 
-  // UI
+  // add comments
+  const handleAddComment = async () => {
+    if (!newComment.trim() || !taskId) return;
+
+    try {
+      toast.loading("Adding comment...");
+
+      const c = await addComment(taskId, newComment);
+
+      setComments((prev) => [
+        ...prev,
+        {
+          id: c.id,
+          content: c.content,
+          createdAt: c.created_at,
+          user: {
+            id: c.user.id,
+            name: getUserName(c.user),
+            image: c.user.image,
+          },
+        },
+      ]);
+
+      setNewComment("");
+      toast.dismiss();
+      toast.success("Comment added");
+    } catch {
+      toast.dismiss();
+      toast.error("Failed to add comment");
+    }
+  };
+
+  /* ================= UI ================= */
 
   if (loading)
     return (
-      <div className="px-4 py-6 text-gray-500 dark:text-zinc-400">
+      <div className="px-4 py-6 text-gray-500">
         Loading task details...
       </div>
     );
@@ -173,13 +178,12 @@ const handleAddComment = async () => {
       </div>
     );
 
-
-
   return (
     <div className="flex flex-col-reverse lg:flex-row gap-6 sm:p-4 max-w-6xl mx-auto">
+
       {/* COMMENTS */}
       <div className="w-full lg:w-2/3">
-        <div className="p-5 border rounded-md dark:border-zinc-800 flex flex-col lg:h-[80vh]">
+        <div className="p-5 border rounded-md flex flex-col lg:h-[80vh]">
           <h2 className="flex items-center gap-2 mb-4 font-semibold">
             <MessageCircle className="size-5" />
             Task Discussion ({comments.length})
@@ -195,12 +199,16 @@ const handleAddComment = async () => {
             {comments.map((comment) => (
               <div
                 key={comment.id}
-                className="border p-3 rounded-md dark:border-zinc-700"
+                className="border p-3 rounded-md"
               >
                 <div className="text-xs text-gray-500 mb-1">
                   {comment.user.name} •{" "}
-                  {format(new Date(comment.createdAt), "dd MMM yyyy, HH:mm")}
+                  {format(
+                    new Date(comment.createdAt),
+                    "dd MMM yyyy, HH:mm"
+                  )}
                 </div>
+
                 <p className="text-sm">{comment.content}</p>
               </div>
             ))}
@@ -211,9 +219,10 @@ const handleAddComment = async () => {
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               placeholder="Write a comment..."
-              className="border rounded p-2 text-sm dark:bg-zinc-800 dark:border-zinc-700"
+              className="border rounded p-2 text-sm"
               rows={3}
             />
+
             <button
               onClick={handleAddComment}
               className="self-end bg-blue-600 text-white px-4 py-2 rounded text-sm"
@@ -224,9 +233,9 @@ const handleAddComment = async () => {
         </div>
       </div>
 
-      {/* TASK + PROJECT INFO */}
+      {/* TASK INFO */}
       <div className="w-full lg:w-1/3 space-y-6">
-        <div className="p-5 border rounded-md dark:border-zinc-800">
+        <div className="p-5 border rounded-md">
           <h1 className="text-lg font-semibold mb-2">{task.title}</h1>
 
           <div className="flex gap-2 mb-3 text-xs">
@@ -251,6 +260,7 @@ const handleAddComment = async () => {
             <div>
               Assigned to: {task.assignee?.name || "Unassigned"}
             </div>
+
             <div className="flex items-center gap-2">
               <CalendarIcon className="size-4" />
               Due:{" "}
@@ -262,17 +272,14 @@ const handleAddComment = async () => {
         </div>
 
         {project && (
-          <div className="p-5 border rounded-md dark:border-zinc-800">
+          <div className="p-5 border rounded-md">
             <h2 className="flex items-center gap-2 font-semibold mb-3">
               <PenIcon className="size-4" />
               {project.name}
             </h2>
-            <p className="text-sm">
-              Status: {project.status}
-            </p>
-            <p className="text-sm">
-              Progress: {project.progress}%
-            </p>
+
+            <p className="text-sm">Status: {project.status}</p>
+            <p className="text-sm">Progress: {project.progress}%</p>
           </div>
         )}
       </div>

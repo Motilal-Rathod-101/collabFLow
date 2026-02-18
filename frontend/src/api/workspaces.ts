@@ -21,3 +21,15 @@ export const inviteWorkspaceMember = (
   role: "admin" | "member"
 ) =>
   api.post(`workspaces/${workspaceId}/invite/`, { email, role });
+
+
+  // remove workspace member
+  export const removeWorkspaceMember = async (
+  workspaceId: string,
+  userId: string
+) => {
+  const res = await api.delete(
+    `workspaces/${workspaceId}/members/${userId}/`
+  );
+  return res.data;
+};

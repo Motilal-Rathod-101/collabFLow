@@ -15,6 +15,8 @@ interface AuthState {
   user: User | null;
   loading: boolean;
   isAuthenticated: boolean;
+  
+  
 };
 
 const getUserFromToken = (): User | null => {

@@ -9,6 +9,7 @@ def send_project_invitation_email(invite):
     message = (
         f"Hello,\n\n"
         f"You have been invited to join the project: {invite.project.name}\n\n"
+        # f"You have been invited to join the project: {invite.workspace.name}\n\n"
         f"Signup using this link:\n{signup_link}\n\n"
         f"If you didn’t request this, you can ignore this email."
     )

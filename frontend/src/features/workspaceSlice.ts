@@ -198,6 +198,43 @@ const workspaceSlice = createSlice({
         project.tasks = tasks;
       }
     },
+    removeProjectMember(
+      state,
+      action: PayloadAction<{ projectId: string; userId: string }>
+    ) {
+      if (!state.currentWorkspace) return;
+
+      const project = state.currentWorkspace.projects.find(
+        (p) => p.id === action.payload.projectId
+      );
+
+      if (!project) return;
+
+      project.members = project.members.filter(
+        (m) => m.user.id !== action.payload.userId
+      );
+    },
+
+    removeWorkspaceMember(
+        state,
+        action: PayloadAction<{ workspaceId: string; userId: string }>
+      ) {
+        const workspace = state.workspaces.find(
+          (w) => w.id === action.payload.workspaceId
+        );
+
+        if (!workspace) return;
+
+        workspace.members = workspace.members.filter(
+          (m) => m.user.id !== action.payload.userId
+        );
+
+        if (state.currentWorkspace?.id === workspace.id) {
+          state.currentWorkspace.members = workspace.members;
+        }
+      },
+
+
   },
 
   extraReducers: (builder) => {
@@ -232,6 +269,9 @@ export const {
   deleteTask,
   updateTask,
   setProjectTasks,
+  removeProjectMember,
+  removeWorkspaceMember,
+ 
 } = workspaceSlice.actions;
 
 export default workspaceSlice.reducer;

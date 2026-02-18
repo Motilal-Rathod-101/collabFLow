@@ -5,6 +5,10 @@ import EditProjectDialog from "./EditProjectDialog";
 import { Project } from "../features/workspaceSlice";
 import { useSelector } from "react-redux";
 import type { RootState } from "../app/store";
+import { removeProjectMember } from "../api/projects";
+import { useDispatch } from "react-redux";
+import { removeProjectMember as removeMemberAction } from "../features/workspaceSlice";
+
 
 interface Props {
   project: Project;
@@ -13,6 +17,7 @@ interface Props {
 export default function ProjectSettings({ project }: Props) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const dispatch = useDispatch();
 
   const currentUser = useSelector(
     (state: RootState) => state.auth.user
@@ -39,6 +44,27 @@ export default function ProjectSettings({ project }: Props) {
   const doneTasks = tasks.filter((t) => t.status === "DONE").length;
   const progress =
     totalTasks === 0 ? 0 : Math.round((doneTasks / totalTasks) * 100);
+
+    // const token = useSelector(
+    //   (state: RootState) => state.auth.accessToken
+    // );
+    const handleRemoveMember = async (userId: string) => {
+  try {
+    await removeProjectMember(project.id, userId);
+
+    dispatch(
+      removeMemberAction({
+        projectId: project.id,
+        userId,
+      })
+    );
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+
+
 
   const inputClasses =
     "w-full px-3 py-2 rounded mt-2 border text-sm bg-gray-50 dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-300 cursor-not-allowed";
@@ -206,7 +232,21 @@ export default function ProjectSettings({ project }: Props) {
                   key={member.user.id}
                   className="flex items-center justify-between px-3 py-2 rounded dark:bg-zinc-800 text-sm"
                 >
-                  <span>{member.user.email}</span>
+                  {/* <span>{member.user.email}</span> */}
+                  <div className="flex items-center gap-3">
+                    <span>{member.user.email}</span>
+
+                    {isProjectOwner &&
+                      member.user.id !== projectOwner?.id && (
+                        <button
+                          onClick={() => handleRemoveMember(member.user.id)}
+                          className="text-xs px-2 py-1 rounded bg-blue-500 text-white hover:bg-red-600"
+                        >
+                          Remove
+                        </button>
+                      )}
+                  </div>
+
 
                   {project.team_lead === member.user.id && (
                     <span className="px-2 py-0.5 rounded-xs ring ring-zinc-200 dark:ring-zinc-600">
