@@ -1,20 +1,20 @@
 import { useState } from "react";
 import { Calendar as CalendarIcon } from "lucide-react";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import { format } from "date-fns";
 
-import { setProjectTasks } from "../features/workspaceSlice";
-import { createTaskApi, getTasks } from "../api/tasks";
+import { createTaskApi } from "../api/tasks";
 import type { RootState } from "../app/store";
 
 type TaskType = "BUG" | "FEATURE" | "TASK" | "IMPROVEMENT" | "OTHER";
 type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE";
 type TaskPriority = "LOW" | "MEDIUM" | "HIGH";
 
-interface CreateTaskDialogProps {
+interface Props {
   showCreateTask: boolean;
-  setShowCreateTask: (value: boolean) => void;
+  setShowCreateTask: (v: boolean) => void;
   projectId: string;
+  onTaskCreated?: () => void;
 }
 
 interface FormData {
@@ -31,9 +31,8 @@ export default function CreateTaskDialog({
   showCreateTask,
   setShowCreateTask,
   projectId,
-}: CreateTaskDialogProps) {
-  const dispatch = useDispatch();
-
+  onTaskCreated,
+}: Props) {
   const currentWorkspace = useSelector(
     (state: RootState) => state.workspace.currentWorkspace
   );
@@ -45,9 +44,7 @@ export default function CreateTaskDialog({
   const teamMembers = project?.members ?? [];
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<Record<string,string>>({});
-
-
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [formData, setFormData] = useState<FormData>({
     title: "",
@@ -60,7 +57,7 @@ export default function CreateTaskDialog({
   });
 
   const validateForm = () => {
-    const newErrors: Record<string,string> = {};
+    const newErrors: Record<string, string> = {};
 
     if (!formData.title.trim()) {
       newErrors.title = "task title required";
@@ -69,7 +66,6 @@ export default function CreateTaskDialog({
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     if (!validateForm()) return;
@@ -89,8 +85,7 @@ export default function CreateTaskDialog({
         due_date: formData.due_date || null,
       });
 
-      const tasks = await getTasks(projectId);
-      dispatch(setProjectTasks({ projectId, tasks }));
+      onTaskCreated?.();
 
       setFormData({
         title: "",
@@ -130,7 +125,6 @@ export default function CreateTaskDialog({
           {errors.title && (
             <p className="text-red-500 text-xs">{errors.title}</p>
           )}
-
 
           <textarea
             value={formData.description}

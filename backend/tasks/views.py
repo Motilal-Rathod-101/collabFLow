@@ -5,6 +5,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from rest_framework.generics import ListCreateAPIView
+from core.pagination import StandardResultsSetPagination
+
 from .models import Task
 from .serializers import TaskSerializer
 from projects.models import Project
@@ -17,26 +20,28 @@ from core.permissions import (
 
 class TaskListView(APIView):
     permission_classes = [IsAuthenticated, IsProjectMemberPermission]
-
     def get(self, request, project_id):
         project = get_object_or_404(Project, id=project_id)
 
         # check project membership
         self.check_object_permissions(request, project)
-
         tasks = (
             Task.objects
             .filter(project=project)
             .select_related("assignee", "created_by")
         )
 
+        #pagination start
+        paginator = StandardResultsSetPagination()
+        paginated_tasks = paginator.paginate_queryset(tasks, request)
+
         serializer = TaskSerializer(
-            tasks,
+            paginated_tasks,
             many=True,
             context={"project": project}
         )
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return paginator.get_paginated_response(serializer.data)
 
     def post(self, request, project_id):
         project = get_object_or_404(Project, id=project_id)

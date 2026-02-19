@@ -17,8 +17,9 @@ import ProjectCalendar from "../components/ProjectCalendar";
 import ProjectTasks from "../components/ProjectTasks";
 
 import type { RootState } from "../app/store";
-import type { Project,Task as WorkspaceTask  } from "../features/workspaceSlice";
+import type { Project, Task as WorkspaceTask } from "../features/workspaceSlice";
 import type { Task } from "../components/ProjectTasks";
+import { getTasks } from "../api/tasks";
 
 export default function ProjectDetail() {
   const navigate = useNavigate();
@@ -38,12 +39,35 @@ export default function ProjectDetail() {
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [activeTab, setActiveTab] = useState(tabFromUrl);
 
-  // keep tab in sync with URL
+  const [page, setPage] = useState(1);
+  const [hasNext, setHasNext] = useState(false);
+  const [loadingTasks, setLoadingTasks] = useState(false);
+
   useEffect(() => {
     setActiveTab(tabFromUrl);
   }, [tabFromUrl]);
 
-  // find project and map tasks
+  const loadTasks = async (projectId: string, pageNumber: number) => {
+    try {
+      setLoadingTasks(true);
+
+      const data = await getTasks(projectId, pageNumber);
+
+      const mapped = data.results.map((task: any) => ({
+        ...task,
+        projectId: projectId,
+      }));
+
+      setTasks((prev) =>
+        pageNumber === 1 ? mapped : [...prev, ...mapped]
+      );
+
+      setHasNext(!!data.next);
+    } finally {
+      setLoadingTasks(false);
+    }
+  };
+
   useEffect(() => {
     if (!projectId || !currentWorkspace) return;
 
@@ -52,16 +76,15 @@ export default function ProjectDetail() {
 
     setProject(found);
 
-    const mappedTasks = found.tasks?.map((task: any) => ({
-      ...task,
-      project: found.id,     // for Redux
-      projectId: found.id,   //  for UI routing
-    })) ?? [];
-
-
-  setTasks(mappedTasks);
-
+    setTasks([]);
+    setPage(1);
+    loadTasks(found.id, 1);
   }, [projectId, projects, currentWorkspace]);
+
+  useEffect(() => {
+    if (!projectId || page === 1) return;
+    loadTasks(projectId, page);
+  }, [page]);
 
   if (!currentWorkspace) {
     return <div className="p-6">Loading workspace...</div>;
@@ -90,14 +113,21 @@ export default function ProjectDetail() {
   };
 
   const calendarTasks: WorkspaceTask[] =
-  tasks.map((t) => ({
-    ...t,
-    project: t.projectId, 
-  })) as WorkspaceTask[];
+    tasks.map((t) => ({
+      ...t,
+      project: t.projectId,
+    })) as WorkspaceTask[];
+
+
+    const refreshTasks = () => {
+      if (!projectId) return;
+      setTasks([]);
+      setPage(1);
+      loadTasks(projectId, 1);
+    };
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      {/* Header */}
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-3">
           <button onClick={() => navigate("/projects")}>
@@ -119,7 +149,6 @@ export default function ProjectDetail() {
         </button>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Stat label="Total Tasks" value={tasks.length} />
         <Stat
@@ -136,7 +165,6 @@ export default function ProjectDetail() {
         />
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-2 border rounded overflow-hidden">
         {[
           { key: "tasks", label: "Tasks", icon: FileStackIcon },
@@ -160,8 +188,22 @@ export default function ProjectDetail() {
         ))}
       </div>
 
-      {/* Content */}
-      {activeTab === "tasks" && <ProjectTasks tasks={tasks} />}
+      {activeTab === "tasks" && (
+        <>
+          <ProjectTasks tasks={tasks} />
+          {hasNext && (
+            <div className="flex justify-center mt-4">
+              <button
+                onClick={() => setPage((p) => p + 1)}
+                className="px-4 py-2 bg-blue-600 text-white rounded"
+              >
+                {loadingTasks ? "Loading..." : "Load More"}
+              </button>
+            </div>
+          )}
+        </>
+      )}
+
       {activeTab === "calendar" && (
         <ProjectCalendar tasks={calendarTasks} />
       )}
@@ -174,15 +216,18 @@ export default function ProjectDetail() {
         />
       )}
 
-      {activeTab === "settings" && <ProjectSettings project={project} />}
+      {activeTab === "settings" && (
+        <ProjectSettings project={project} />
+      )}
 
-      {/* Create Task */}
       {showCreateTask && (
         <CreateTaskDialog
           showCreateTask={showCreateTask}
           setShowCreateTask={setShowCreateTask}
           projectId={project.id}
+          onTaskCreated={refreshTasks}
         />
+
       )}
     </div>
   );

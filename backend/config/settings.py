@@ -111,6 +111,10 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+
+    # pagination
+     "DEFAULT_PAGINATION_CLASS": "core.pagination.StandardResultsSetPagination",
+    "PAGE_SIZE": 10,
 }
 
 

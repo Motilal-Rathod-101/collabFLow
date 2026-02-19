@@ -162,7 +162,6 @@ const TaskDetails = () => {
     }
   };
 
-  /* ================= UI ================= */
 
   if (loading)
     return (
