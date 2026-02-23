@@ -22,5 +22,6 @@ urlpatterns = [
     path("api/", include("tasks.urls")),
     path("api/auth/", include("core.urls")),
     path("api/", include("comments.urls")),
+    path("api/ai/", include("ai.urls")),
         
 ]

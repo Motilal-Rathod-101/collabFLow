@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import dj_database_url
 from datetime import timedelta
 
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv(BASE_DIR / ".env")
@@ -31,6 +32,7 @@ INSTALLED_APPS = [
     'projects',
     'tasks',
     'comments',
+    "ai",
 ]
 
 

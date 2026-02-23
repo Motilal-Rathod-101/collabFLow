@@ -6,6 +6,8 @@ import type { RootState, AppDispatch } from "../app/store";
 import { logout as logoutApi } from "../api/auth";
 import { logout as logoutAction } from "../features/authSlice";
 import { useNavigate,NavLink } from "react-router-dom";
+import AIChatbot from "./AIChatbot";
+import { useState } from "react";
 
 
 interface NavbarProps {
@@ -18,6 +20,7 @@ const Navbar: React.FC<NavbarProps> = ({ setIsSidebarOpen }) => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const theme = useSelector((state: RootState) => state.theme.theme);
+  const [showAI, setShowAI] = useState(false);
 
 
   return (
@@ -38,6 +41,13 @@ const Navbar: React.FC<NavbarProps> = ({ setIsSidebarOpen }) => {
 
         {/* Right section */}
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowAI(true)}
+            className="text-sm px-3 py-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          >
+            AI-ChatBot
+          </button>
+
           {/* Theme Toggle */}
           <button
             onClick={() => dispatch(toggleTheme())}
@@ -78,7 +88,14 @@ const Navbar: React.FC<NavbarProps> = ({ setIsSidebarOpen }) => {
           </button>
         </div>
       </div>
-     </div>
+    {showAI && (
+      <div className="fixed inset-0 z-50 pointer-events-none">
+        <div className="pointer-events-auto">
+          <AIChatbot onClose={() => setShowAI(false)} />
+        </div>
+      </div>
+    )}   
+    </div>
   );
 };
 
